@@ -3,1044 +3,295 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>IV Drug Compatibility & Stability</title>
+<title>IV Drug Compatibility & Stability — รพ.พังงา v.2566</title>
 <style>
-  :root {
-    --c-teal: #0F6E56; --c-teal-light: #E1F5EE; --c-teal-mid: #1D9E75; --c-teal-dark: #085041;
-    --c-amber: #BA7517; --c-amber-light: #FAEEDA; --c-red: #A32D2D; --c-red-light: #FCEBEB;
-    --c-blue: #185FA5; --c-blue-light: #E6F1FB; --c-purple: #534AB7; --c-purple-light: #EEEDFE;
-    --c-gray: #5F5E5A; --c-gray-light: #F1EFE8; --c-gray-border: #D3D1C7;
-    --bg: #f7f7f5; --surface: #ffffff; --text: #1a1a18; --text-muted: #5F5E5A;
-    --radius: 10px; --shadow: 0 1px 4px rgba(0,0,0,0.08);
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.5; }
-
-  /* Header */
-  #app-header { background: var(--c-teal-dark); padding: 20px 24px 16px; }
-  #app-header h1 { color: #fff; font-size: 20px; font-weight: 600; letter-spacing: -0.3px; }
-  #app-header p { color: #9FE1CB; font-size: 12px; margin-top: 3px; }
-
-  /* Search & Filters */
-  #controls { background: var(--surface); border-bottom: 1px solid var(--c-gray-border); padding: 12px 24px; position: sticky; top: 0; z-index: 100; }
-  #search-box { display: flex; align-items: center; gap: 8px; background: var(--bg); border: 1px solid var(--c-gray-border); border-radius: 8px; padding: 7px 12px; margin-bottom: 10px; }
-  #search-box svg { flex-shrink: 0; color: var(--text-muted); }
-  #search-box input { border: none; background: transparent; font-size: 14px; color: var(--text); outline: none; width: 100%; }
-  #search-box input::placeholder { color: var(--text-muted); }
-
-  #cat-filters { display: flex; gap: 6px; flex-wrap: wrap; }
-  .cat-btn { padding: 4px 12px; border-radius: 20px; border: 1px solid var(--c-gray-border); background: transparent; font-size: 12px; cursor: pointer; color: var(--text-muted); transition: all 0.15s; white-space: nowrap; }
-  .cat-btn.active { background: var(--c-teal); border-color: var(--c-teal); color: #fff; font-weight: 500; }
-  .cat-btn:hover:not(.active) { background: var(--c-gray-light); }
-
-  /* Stats */
-  #stats-bar { padding: 8px 24px; display: flex; gap: 16px; background: var(--c-gray-light); border-bottom: 1px solid var(--c-gray-border); }
-  .stat-item { font-size: 12px; color: var(--text-muted); }
-  .stat-item strong { color: var(--text); }
-
-  /* Drug Grid */
-  #drug-grid { padding: 16px 24px; display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px; }
-  #no-results { text-align: center; padding: 60px 24px; color: var(--text-muted); display: none; }
-  #no-results svg { margin-bottom: 12px; opacity: 0.3; }
-
-  /* Drug Card */
-  .drug-card { background: var(--surface); border: 1px solid var(--c-gray-border); border-radius: var(--radius); padding: 14px 16px; cursor: pointer; transition: all 0.15s; position: relative; overflow: hidden; }
-  .drug-card:hover { border-color: var(--c-teal-mid); box-shadow: 0 2px 12px rgba(15,110,86,0.12); transform: translateY(-1px); }
-  .drug-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; }
-  .drug-card.cat-antibiotic::before { background: var(--c-teal); }
-  .drug-card.cat-nonantibiotic::before { background: var(--c-blue); }
-  .drug-card.cat-electrolyte::before { background: var(--c-amber); }
-  .drug-card.cat-vasoactive::before { background: var(--c-red); }
-
-  .card-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
-  .drug-name { font-size: 14px; font-weight: 600; color: var(--text); line-height: 1.3; }
-  .drug-generic { font-size: 11px; color: var(--text-muted); font-style: italic; margin-top: 1px; }
-  .subcat-badge { font-size: 10px; padding: 2px 7px; border-radius: 20px; white-space: nowrap; flex-shrink: 0; }
-  .badge-antibiotic { background: var(--c-teal-light); color: var(--c-teal-dark); }
-  .badge-nonantibiotic { background: var(--c-blue-light); color: var(--c-blue); }
-  .badge-electrolyte { background: var(--c-amber-light); color: var(--c-amber); }
-  .badge-vasoactive { background: var(--c-red-light); color: var(--c-red); }
-  .badge-sedative { background: var(--c-purple-light); color: var(--c-purple); }
-
-  .card-info { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; font-size: 11px; }
-  .info-item { background: var(--bg); border-radius: 6px; padding: 6px 8px; }
-  .info-label { color: var(--text-muted); font-size: 10px; margin-bottom: 2px; }
-  .info-value { color: var(--text); line-height: 1.3; }
-  .info-value.highlight { color: var(--c-teal); font-weight: 500; }
-
-  .card-warnings { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 4px; }
-  .warn-tag { font-size: 10px; padding: 2px 7px; border-radius: 4px; }
-  .warn-ysiteblock { background: #FCEBEB; color: #A32D2D; }
-  .warn-pregnancy { background: #EEEDFE; color: #534AB7; }
-  .warn-light { background: #FAEEDA; color: #BA7517; }
-  .warn-refrig { background: #E6F1FB; color: #185FA5; }
-
-  .card-form { font-size: 11px; color: var(--text-muted); margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--bg); }
-
-  /* Modal */
-  #modal-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 200; align-items: flex-start; justify-content: center; padding: 20px; overflow-y: auto; }
-  #modal-backdrop.open { display: flex; }
-  #modal { background: var(--surface); border-radius: 14px; width: 100%; max-width: 760px; margin: auto; position: relative; }
-  #modal-header { padding: 20px 24px 16px; border-bottom: 1px solid var(--c-gray-border); display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
-  #modal-drug-name { font-size: 20px; font-weight: 700; color: var(--text); }
-  #modal-drug-sub { font-size: 13px; color: var(--text-muted); margin-top: 3px; }
-  #modal-close { background: var(--bg); border: none; border-radius: 50%; width: 32px; height: 32px; cursor: pointer; font-size: 18px; color: var(--text-muted); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-  #modal-close:hover { background: var(--c-gray-border); }
-  #modal-body { padding: 20px 24px; }
-  .modal-section { margin-bottom: 18px; }
-  .modal-section:last-child { margin-bottom: 0; }
-  .section-title { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text-muted); margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
-  .section-dot { width: 8px; height: 8px; border-radius: 50%; }
-  .dot-recon { background: var(--c-teal); }
-  .dot-dilute { background: var(--c-blue); }
-  .dot-admin { background: var(--c-amber); }
-  .dot-stability { background: var(--c-purple); }
-  .dot-notes { background: var(--c-red); }
-  .section-content { font-size: 13px; color: var(--text); line-height: 1.6; background: var(--bg); border-radius: 8px; padding: 10px 14px; }
-  .section-content.warning { background: var(--c-red-light); border-left: 3px solid var(--c-red); }
-  .modal-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  .modal-tag { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; padding: 3px 8px; border-radius: 4px; margin: 2px; }
-
-  @media (max-width: 600px) {
-    #drug-grid { grid-template-columns: 1fr; padding: 12px 16px; }
-    #controls { padding: 10px 16px; }
-    #app-header { padding: 16px; }
-    .modal-grid2 { grid-template-columns: 1fr; }
-    #modal-backdrop { padding: 10px; }
-  }
+:root{
+  --teal:#0F6E56;--teal-l:#E1F5EE;--teal-m:#1D9E75;--teal-d:#085041;
+  --blue:#185FA5;--blue-l:#E6F1FB;
+  --amber:#BA7517;--amber-l:#FAEEDA;
+  --red:#A32D2D;--red-l:#FCEBEB;
+  --purple:#534AB7;--purple-l:#EEEDFE;
+  --gray:#5F5E5A;--gray-l:#F1EFE8;--gray-b:#D3D1C7;
+  --bg:#f5f5f2;--surface:#fff;--text:#1a1a18;--muted:#5F5E5A;
+  --r:10px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;}
+#hdr{background:var(--teal-d);padding:18px 24px 14px;}
+#hdr h1{color:#fff;font-size:19px;font-weight:700;letter-spacing:-.3px;}
+#hdr p{color:#9FE1CB;font-size:11px;margin-top:3px;}
+#ctrl{background:var(--surface);border-bottom:1px solid var(--gray-b);padding:10px 24px;position:sticky;top:0;z-index:100;}
+#sb{display:flex;align-items:center;gap:8px;background:var(--bg);border:1px solid var(--gray-b);border-radius:8px;padding:6px 12px;margin-bottom:8px;}
+#sb input{border:none;background:transparent;font-size:13px;color:var(--text);outline:none;width:100%;}
+#sb input::placeholder{color:var(--muted);}
+#cats{display:flex;gap:5px;flex-wrap:wrap;}
+.cb{padding:3px 11px;border-radius:20px;border:1px solid var(--gray-b);background:transparent;font-size:11px;cursor:pointer;color:var(--muted);white-space:nowrap;transition:all .12s;}
+.cb.on{background:var(--teal);border-color:var(--teal);color:#fff;font-weight:600;}
+.cb:hover:not(.on){background:var(--gray-l);}
+#sbar{padding:6px 24px;display:flex;gap:16px;background:var(--gray-l);border-bottom:1px solid var(--gray-b);font-size:11px;color:var(--muted);}
+#sbar strong{color:var(--text);}
+#grid{padding:14px 24px;display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:10px;}
+#nores{text-align:center;padding:60px;color:var(--muted);display:none;}
+.dc{background:var(--surface);border:1px solid var(--gray-b);border-radius:var(--r);padding:12px 14px;cursor:pointer;transition:all .13s;position:relative;overflow:hidden;}
+.dc:hover{border-color:var(--teal-m);box-shadow:0 2px 12px rgba(15,110,86,.12);transform:translateY(-1px);}
+.dc::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;}
+.dc.ca::before{background:var(--teal);}
+.dc.cn::before{background:var(--blue);}
+.dc.ce::before{background:var(--amber);}
+.dc.cv::before{background:var(--red);}
+.dc.cs::before{background:var(--purple);}
+.ch{display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:7px;}
+.dn{font-size:13px;font-weight:600;line-height:1.3;}
+.ds{font-size:10px;color:var(--muted);font-style:italic;margin-top:1px;}
+.bdg{font-size:10px;padding:2px 7px;border-radius:20px;white-space:nowrap;flex-shrink:0;}
+.ba{background:var(--teal-l);color:var(--teal-d);}
+.bn{background:var(--blue-l);color:var(--blue);}
+.be{background:var(--amber-l);color:var(--amber);}
+.bv{background:var(--red-l);color:var(--red);}
+.bp{background:var(--purple-l);color:var(--purple);}
+.ci{display:grid;grid-template-columns:1fr 1fr;gap:5px;font-size:11px;}
+.ii{background:var(--bg);border-radius:6px;padding:5px 7px;}
+.il{color:var(--muted);font-size:10px;margin-bottom:1px;}
+.iv{color:var(--text);line-height:1.3;}
+.iv.hi{color:var(--teal);font-weight:500;}
+.cw{margin-top:6px;display:flex;flex-wrap:wrap;gap:3px;}
+.wt{font-size:10px;padding:2px 6px;border-radius:4px;}
+.wy{background:#FCEBEB;color:#A32D2D;}
+.wp{background:#EEEDFE;color:#534AB7;}
+.wl{background:#FAEEDA;color:#BA7517;}
+.wr{background:#E6F1FB;color:#185FA5;}
+.cf{font-size:10px;color:var(--muted);margin-top:6px;padding-top:6px;border-top:1px solid var(--bg);}
+#mb{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;align-items:flex-start;justify-content:center;padding:16px;overflow-y:auto;}
+#mb.open{display:flex;}
+#mo{background:var(--surface);border-radius:14px;width:100%;max-width:780px;margin:auto;}
+#moh{padding:18px 22px 14px;border-bottom:1px solid var(--gray-b);display:flex;align-items:flex-start;justify-content:space-between;gap:10px;}
+#mon{font-size:18px;font-weight:700;}
+#mos{font-size:12px;color:var(--muted);margin-top:2px;}
+#moc{background:var(--bg);border:none;border-radius:50%;width:30px;height:30px;cursor:pointer;font-size:16px;color:var(--muted);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+#moc:hover{background:var(--gray-b);}
+#mob{padding:18px 22px;}
+.ms{margin-bottom:14px;}
+.ms:last-child{margin-bottom:0;}
+.mt{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin-bottom:6px;display:flex;align-items:center;gap:5px;}
+.mc{font-size:13px;color:var(--text);line-height:1.6;background:var(--bg);border-radius:7px;padding:9px 12px;}
+.mc.w{background:var(--red-l);border-left:3px solid var(--red);}
+.mg2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.mtag{display:inline-flex;align-items:center;font-size:11px;padding:2px 7px;border-radius:4px;margin:2px;background:var(--red-l);color:var(--red);}
+.dot{width:7px;height:7px;border-radius:50%;display:inline-block;}
+.d1{background:var(--teal);}
+.d2{background:var(--blue);}
+.d3{background:var(--amber);}
+.d4{background:var(--purple);}
+.d5{background:var(--red);}
+@media(max-width:600px){
+  #grid{grid-template-columns:1fr;padding:10px 12px;}
+  #ctrl{padding:8px 12px;}#hdr{padding:14px 12px;}
+  .mg2{grid-template-columns:1fr;}#mb{padding:8px;}
+}
 </style>
 </head>
 <body>
-
-<div id="app-header">
+<div id="hdr">
   <h1>💉 IV Drug Compatibility &amp; Stability</h1>
-  <p>ข้อมูลการบริหารยาฉีด — โรงพยาบาล v.1/2566</p>
+  <p>ข้อมูลการบริหารยาฉีดที่มีในโรงพยาบาล — v.1/2566 | ครบ 95 รายการ</p>
 </div>
-
-<div id="controls">
-  <div id="search-box">
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-    <input type="text" id="search-input" placeholder="ค้นหาชื่อยา (เช่น Vancomycin, Meropenem...)">
+<div id="ctrl">
+  <div id="sb">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    <input type="text" id="si" placeholder="ค้นหาชื่อยา กลุ่มยา สารเจือจาง หรือข้อควรระวัง...">
   </div>
-  <div id="cat-filters"></div>
+  <div id="cats"></div>
 </div>
-
-<div id="stats-bar">
-  <div class="stat-item"><strong id="count-shown">0</strong> รายการ</div>
-  <div class="stat-item" id="active-cat-label"></div>
-</div>
-
-<div id="drug-grid"></div>
-<div id="no-results">
-  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-  <p>ไม่พบยาที่ค้นหา</p>
-</div>
-
-<div id="modal-backdrop">
-  <div id="modal">
-    <div id="modal-header">
-      <div>
-        <div id="modal-drug-name"></div>
-        <div id="modal-drug-sub"></div>
-      </div>
-      <button id="modal-close">✕</button>
-    </div>
-    <div id="modal-body"></div>
-  </div>
-</div>
-
+<div id="sbar"><span><strong id="cnt">0</strong> รายการ</span><span id="catlbl">ทุกหมวดยา</span></div>
+<div id="grid"></div>
+<div id="nores"><p>ไม่พบยาที่ค้นหา</p></div>
+<div id="mb"><div id="mo"><div id="moh"><div><div id="mon"></div><div id="mos"></div></div><button id="moc">✕</button></div><div id="mob"></div></div></div>
 <script>
-const DRUGS = [
-  // ===== ANTIBIOTICS =====
-  // Penicillins
-  {name:"Ampicillin sodium",form:"ผงแห้งปราศจากเชื้อ 1 g",cat:"Antibiotics",subcat:"Penicillins",
-   reconstitution:"IM: ละลาย 1 g กับ SWI 3.5 mL (250 mg/mL)\nIV: ละลาย 1 g กับ SWI 5 mL",
-   stabilityRecon:"ไม่แนะนำให้เก็บยาที่ละลายแล้วใน vial — ทิ้งทันที",
-   dilution:"NSS 125, 250 หรือ 500 mL (10-20 mg/mL)",
-   stabilityDilute:"4 ชั่วโมงที่อุณหภูมิห้อง",
-   admin:"IV infusion: หยดยาเข้าหลอดเลือดนานกว่า 10–15 นาที",
-   notes:"อาการแพ้ยา: ผื่น คันผิวหนัง หายใจผิดปกติ\nPregnancy: Category B",
-   ysite:[],pregnancy:"B",warnings:[]},
-
-  {name:"Benzathine benzylpenicillin",form:"ผงแห้งปราศจากเชื้อ 1.2 MU",cat:"Antibiotics",subcat:"Penicillins",
-   reconstitution:"0.6 MU + SWI ≥2 mL\n1.2 MU + SWI ≥3 mL\n2.4 MU + SWI ≥4 mL",
-   stabilityRecon:"ไม่แนะนำเก็บ — ทิ้งทันทีหากใช้ไม่หมด",
-   dilution:"-",stabilityDilute:"-",
-   admin:"IM เท่านั้น: ฉีดเข้ากล้ามเนื้อลึกๆ สะโพก (Hochstetter's field) เด็ก: ฉีดตรงกลางกล้ามเนื้อโคนขาด้านข้าง (18-20G, 1 นิ้ว)",
-   notes:"⚠️ ห้าม SC, IV — อาจเกิด cardiopulmonary arrest และตายได้!\nPregnancy: Category B",
-   ysite:[],pregnancy:"B",warnings:["noIV"]},
-
-  {name:"Cloxacillin sodium",form:"ผงแห้งปราศจากเชื้อ 1 g",cat:"Antibiotics",subcat:"Penicillins",
-   reconstitution:"IM: SWI 4 หรือ 8 mL (125/250 mg/mL)\nIV: SWI 10 หรือ 20 mL (50/100 mg/mL)",
-   stabilityRecon:"24 ชม. ที่ <30°C\n48 ชม. ในตู้เย็น (2-8°C)",
-   dilution:"D5W หรือ NSS ความเข้มข้น <20 mg/mL (แนะนำ NSS — phlebitis น้อยกว่า D5W)",
-   stabilityDilute:"12 ชม. ที่อุณหภูมิห้อง",
-   admin:"IM: ฉีด 2-4 นาที\nIV bolus: ช้าๆ 2-4 นาที\nIV infusion: 30-40 นาที",
-   notes:"ติดตามอาการแพ้ยาหลังได้ยาครั้งแรก\nติดตามภาวะ phlebitis\nPregnancy: Category B",
-   ysite:[],pregnancy:"B",warnings:[]},
-
-  {name:"Penicillin G sodium",form:"ผงแห้งปราศจากเชื้อ 5 MU",cat:"Antibiotics",subcat:"Penicillins",
-   reconstitution:"ละลาย 5 MU ด้วย SWI 8.2 mL (500,000 units/mL)",
-   stabilityRecon:"3 วัน ในตู้เย็น (2-8°C)",
-   dilution:"D5W, NSS, N/2 (40,000 UI/mL หรือ 100,000 UI/mL ใช้ N/2)",
-   stabilityDilute:"24 ชม. ที่อุณหภูมิห้อง",
-   admin:"IM: ฉีดเข้ากล้ามเนื้อลึกๆ\nIV infusion: 15-30 นาที",
-   notes:"ห้ามใช้หากแพ้ penicillins\nระวังผู้ป่วยไตบกพร่องและโรคลมชัก\nPregnancy: Category B",
-   ysite:[],pregnancy:"B",warnings:[]},
-
-  // Cephalosporins
-  {name:"Cefazolin sodium",form:"ผงแห้งปราศจากเชื้อ 1 g",cat:"Antibiotics",subcat:"Cephalosporins",
-   reconstitution:"IM: SWI 2.5 mL\nIV: SWI 10 mL",
-   stabilityRecon:"24 ชม. ที่ <25°C\n72 ชม. ในตู้เย็น (2-8°C)",
-   dilution:"D5W, D10W, LRS, NSS — ยา 1 g ต่อสารน้ำ ≥50 mL (20 mg/mL)",
-   stabilityDilute:"24 ชม. ที่ <25°C\n72 ชม. ในตู้เย็น (2-8°C)",
-   admin:"IM: deep IM กล้ามเนื้อมัดใหญ่\nIV push: ช้าๆ ≥5 นาที\nIV infusion: 30-60 นาที",
-   notes:"⚠️ Y-site: ห้ามกับ vancomycin\nPregnancy: Category B",
-   ysite:["vancomycin"],pregnancy:"B",warnings:[]},
-
-  {name:"Cefotaxime sodium",form:"ผงแห้งปราศจากเชื้อ 1 g",cat:"Antibiotics",subcat:"Cephalosporins",
-   reconstitution:"ละลาย 1 g ด้วย SWI 4 mL (250 mg/mL)",
-   stabilityRecon:"12 ชม. ที่ 25°C\n24 ชม. ในตู้เย็น (2-8°C, ป้องกันแสง)",
-   dilution:"NSS หรือ D5W — ยา 1 g เจือจางด้วยสารน้ำ 40-100 mL (20-40 mg/mL)",
-   stabilityDilute:"12 ชม. ที่ 25°C\n24 ชม. ในตู้เย็น (2-8°C, ป้องกันแสง)",
-   admin:"IV infusion: ช้าๆ ≥50-60 นาที",
-   notes:"⚠️ Y-site: ห้ามกับ azithromycin, vancomycin\nห้ามใช้หากแพ้ beta-lactam อย่างรุนแรง\nPregnancy: Category B",
-   ysite:["azithromycin","vancomycin"],pregnancy:"B",warnings:[]},
-
-  {name:"Ceftazidime",form:"ผงแห้งปราศจากเชื้อ 1 g",cat:"Antibiotics",subcat:"Cephalosporins",
-   reconstitution:"IM: SWI 3 mL\nIV: SWI 10 mL",
-   stabilityRecon:"18 ชม. ที่ <25°C",
-   dilution:"D5W, D5S, NSS, LRS — ยา 1 g ต่อสารน้ำ ≥50 mL (20-40 mg/mL)",
-   stabilityDilute:"24 ชม. ที่ 25°C\n7 วัน ในตู้เย็น (2-8°C)",
-   admin:"IM: ฉีดเข้า Gluteus maximus บน-นอก\nIV infusion: ≥30 นาที",
-   notes:"⚠️ Y-site: ห้ามกับ amiodarone, amphotericin B, vancomycin, phenytoin, nicardipine\nPregnancy: Category B",
-   ysite:["amiodarone","amphotericin B","vancomycin","phenytoin","nicardipine"],pregnancy:"B",warnings:[]},
-
-  {name:"Ceftriaxone sodium",form:"ผงแห้งปราศจากเชื้อ 1 g",cat:"Antibiotics",subcat:"Cephalosporins",
-   reconstitution:"IV: SWI 10 mL\nIM: 1% lidocaine HCl 3.5 mL",
-   stabilityRecon:"6 ชม. อุณหภูมิห้อง\n24 ชม. ในตู้เย็น (2-8°C)",
-   dilution:"D5W, D10W, NSS, NSS/2 — ≥50 mL (20-40 mg/mL)",
-   stabilityDilute:"6 ชม. อุณหภูมิห้อง\n24 ชม. ในตู้เย็น (2-8°C)",
-   admin:"IM: deep IM สะโพก\nIV infusion: ≥30 นาที",
-   notes:"⚠️ ห้ามผสมในสารน้ำที่มี Ca²⁺ — เกิดตะกอน!\nไม่แนะนำ IV push\nPregnancy: Category B",
-   ysite:[],pregnancy:"B",warnings:["noCalcium"]},
-
-  // Betalactam/BLI
-  {name:"Amoxicillin/Clavulanate",form:"ผงปราศจากเชื้อ amoxicillin 1 g + clavulanic acid 200 mg",cat:"Antibiotics",subcat:"BL/BLI",
-   reconstitution:"ละลาย 1.2 g ด้วย SWI 20 mL",
-   stabilityRecon:"20 นาที หลังละลายยา",
-   dilution:"NSS — 1.2 g ใน 100 mL (10-20 mg/mL)",
-   stabilityDilute:"24 ชม. ที่ 25°C",
-   admin:"IV bolus: ช้าๆ 3-4 นาที\nIV infusion: ≥30-40 นาที",
-   notes:"⚠️ ห้ามผสมกับ aminoglycosides\nห้ามผสมกับ glucose, dextran, bicarbonate\nPregnancy: Category B",
-   ysite:[],pregnancy:"B",warnings:[]},
-
-  {name:"Ampicillin/Sulbactam",form:"ผงปราศจากเชื้อ ampicillin 2 g + sulbactam 1 g",cat:"Antibiotics",subcat:"BL/BLI",
-   reconstitution:"ละลาย 3 g ด้วย SWI 6.4 mL → ปริมาตรหลังละลาย 8 mL (375 mg/mL)",
-   stabilityRecon:"ไม่แนะนำเก็บใน vial",
-   dilution:"NSS*, D5W, LRS, D5S/2 — เจือจาง 3 g ใน NSS 100 mL (ความเข้มข้นไม่เกิน 45 mg/mL) (*ดีที่สุด)",
-   stabilityDilute:"NSS: 8 ชม. ที่ 25°C / 72 ชม. ที่ 4°C\nD5W: 4 ชม. ในตู้เย็น",
-   admin:"IM: ฉีดเข้ากล้ามเนื้อลึกๆ (อาจใช้ 0.5% lidocaine)\nIV infusion: 15-30 นาที",
-   notes:"⚠️ Y-site: ห้ามกับ amiodarone, nicardipine, ciprofloxacin\nห้ามใช้หากแพ้ penicillins\nPregnancy: Category B",
-   ysite:["amiodarone","nicardipine","ciprofloxacin"],pregnancy:"B",warnings:[]},
-
-  {name:"Cefoperazone/Sulbactam",form:"ผงปราศจากเชื้อ cefoperazone 1 g + sulbactam 0.5 g",cat:"Antibiotics",subcat:"BL/BLI",
-   reconstitution:"ละลาย 1.5 g ด้วย D5W, NSS, SWI หรือ D5S 3.2 mL → 4 mL",
-   stabilityRecon:"ตู้เย็น (2-8°C) 24 ชม.",
-   dilution:"NSS, D5W, D5S 100 mL",
-   stabilityDilute:"ไม่ควรเก็บยาที่เหลือ",
-   admin:"IV infusion: ช้าๆ ≥15-60 นาที",
-   notes:"⚠️ Y-site: ห้ามกับ aminoglycosides\nห้ามใช้หากแพ้ beta-lactam\nติดตาม PT (อาจทำให้ PT prolong)\nPregnancy: Category B",
-   ysite:["aminoglycosides"],pregnancy:"B",warnings:[]},
-
-  {name:"Piperacillin/Tazobactam",form:"ผงปราศจากเชื้อ piperacillin 4 g + tazobactam 0.5 g",cat:"Antibiotics",subcat:"BL/BLI",
-   reconstitution:"ละลาย 4.5 g ด้วย NSS หรือ SWI 20 mL",
-   stabilityRecon:"24 ชม. ที่ <25°C\n48 ชม. ที่ 2-8°C",
-   dilution:"D5W หรือ NSS — 50-150 mL (40-80 mg/mL)",
-   stabilityDilute:"24 ชม. ที่ <25°C\n7 วัน ที่ 2-8°C",
-   admin:"IV infusion: ≥30 นาที",
-   notes:"⚠️ Y-site: ห้ามกับ amiodarone, acyclovir, vancomycin\nห้ามใช้หากแพ้ penicillins/cephalosporins\nPregnancy: Category B",
-   ysite:["amiodarone","acyclovir","vancomycin"],pregnancy:"B",warnings:[]},
-
-  // Carbapenems
-  {name:"Ertapenem sodium (Invanz®)",form:"ผงแห้งปราศจากเชื้อ 1 g",cat:"Antibiotics",subcat:"Carbapenems",
-   reconstitution:"IV: SWI หรือ NSS 10 mL\nIM: 1% หรือ 2% lidocaine HCl 3.2 mL",
-   stabilityRecon:"IV: นำไปเจือจางด้วย NSS ทันที\nIM: ใช้ภายใน 1 ชั่วโมง",
-   dilution:"NSS ≥50 mL (20 mg/mL)",
-   stabilityDilute:"6 ชม. ที่ 25°C\n24 ชม. ที่ 2-8°C",
-   admin:"IM: deep IM กล้ามเนื้อมัดใหญ่\nIV infusion: ช้าๆ ≥30 นาที",
-   notes:"⚠️ สารละลายที่ละลายด้วย lidocaine ห้าม IV\nห้ามใช้สารละลายที่มี dextrose ละลายยา\nPregnancy: Category C",
-   ysite:[],pregnancy:"C",warnings:["noDextrose"]},
-
-  {name:"Imipenem/Cilastatin (Tienam®)",form:"ผงแห้งปราศจากเชื้อ imipenem 500 mg + cilastatin 500 mg",cat:"Antibiotics",subcat:"Carbapenems",
-   reconstitution:"ดูด D5W, NSS, หรือ D5S 10 mL จากขวด IV 100 mL ละลายผงยาใน vial (2 ครั้ง) แล้วเทกลับ",
-   stabilityRecon:"ไม่แนะนำเก็บใน vial",
-   dilution:"D5W, NSS, D5S 100 mL (5 mg/mL)",
-   stabilityDilute:"24 ชม. ที่ 4°C\n4 ชม. ที่ 25°C",
-   admin:"IV infusion:\n≤500 mg → 20-30 นาที\n>500 mg → 40-60 นาที",
-   notes:"⚠️ Y-site: ห้ามกับ amiodarone, NaHCO₃, azithromycin\nอาจเกิดการแพ้ข้ามกลุ่มกับ beta-lactam\nCrCl <5 mL/min + hemodialysis: เสี่ยงชักได้\nPregnancy: Category C",
-   ysite:["amiodarone","NaHCO3","azithromycin"],pregnancy:"C",warnings:[]},
-
-  {name:"Meropenem",form:"ผงแห้งปราศจากเชื้อ 1 g",cat:"Antibiotics",subcat:"Carbapenems",
-   reconstitution:"SWI 20 mL",
-   stabilityRecon:"8 ชม. ที่ 20-25°C\n48 ชม. ที่ 2-8°C",
-   dilution:"D5W*, D5S, D10W, NSS* — 1-20 mg/mL (≥50 mL)\n(*D5W: คงตัวสั้นกว่า NSS)",
-   stabilityDilute:"NSS: 8 ชม. ที่ 20-25°C / 48 ชม. ในตู้เย็น\nD5W: 3 ชม. ที่ 20-25°C / 14 ชม. ในตู้เย็น",
-   admin:"IV infusion: ช้าๆ 15-30 นาที",
-   notes:"⚠️ Y-site: ห้ามกับ acyclovir, diazepam, amphotericin B, calcium gluconate\nอาจแพ้ข้ามกลุ่มกับ beta-lactam\nPregnancy: Category B",
-   ysite:["acyclovir","diazepam","amphotericin B","calcium gluconate"],pregnancy:"B",warnings:[]},
-
-  {name:"Biapenem",form:"ผงแห้งปราศจากเชื้อ 0.3 g",cat:"Antibiotics",subcat:"Carbapenems",
-   reconstitution:"ละลาย 1 g ด้วย NSS 10 mL (ห้ามใช้ WFI)",
-   stabilityRecon:"6 ชม. ที่อุณหภูมิห้อง",
-   dilution:"Isotonic solution D5W, D5S, D10W, NSS — 100 mL",
-   stabilityDilute:"24 ชม. ที่ 2-8°C",
-   admin:"IV infusion: 30-60 นาที",
-   notes:"ขนาดยาสูงสุด 1.2 g/วัน\nไม่ควรผสมกับสารละลายที่มี L-cystine\nPregnancy: Category NA",
-   ysite:[],pregnancy:"NA",warnings:[]},
-
-  // Aminoglycosides
-  {name:"Amikacin",form:"สารละลายปราศจากเชื้อ 500 mg/2 mL",cat:"Antibiotics",subcat:"Aminoglycosides",
-   reconstitution:"-",stabilityRecon:"-",
-   dilution:"NSS, D5W, LRS — 0.25-5 mg/mL",
-   stabilityDilute:"24 ชม. ที่ 25°C",
-   admin:"IM: กล้ามเนื้อมัดใหญ่\nIV infusion: 30-60 นาที",
-   notes:"⚠️ Ototoxic & Nephrotoxic — ติดตามการทำงานของไต\nไม่ควรใช้ในทารก สตรีมีครรภ์ และให้นมบุตร\nPregnancy: Category D",
-   ysite:[],pregnancy:"D",warnings:[]},
-
-  {name:"Gentamicin",form:"สารละลายปราศจากเชื้อ 80 mg/2 mL (40 mg/mL)",cat:"Antibiotics",subcat:"Aminoglycosides",
-   reconstitution:"-",stabilityRecon:"-",
-   dilution:"D5W หรือ NSS — <3 mg/mL (<150 mg: 50 mL, >150 mg: 100 mL)",
-   stabilityDilute:"ไม่มีข้อมูลความคงตัว",
-   admin:"IM: ฉีดเข้ากล้ามเนื้อ\nIV infusion: ≥30-120 นาที",
-   notes:"⚠️ Y-site: ห้ามกับ azithromycin, furosemide, heparin\nอาจทำให้เกิดความผิดปกติต่อประสาทหู\nมีส่วนประกอบ methylparaben/propylparaben — ห้ามฉีดเข้าช่องน้ำไขสันหลัง\nPregnancy: Category D",
-   ysite:["azithromycin","furosemide","heparin"],pregnancy:"D",warnings:[]},
-
-  {name:"Kanamycin",form:"ผงแห้งปราศจากเชื้อ 1 g",cat:"Antibiotics",subcat:"Aminoglycosides",
-   reconstitution:"SWI 3 mL",
-   stabilityRecon:"ทิ้งทันทีหลังใช้",
-   dilution:"-",stabilityDilute:"-",
-   admin:"IM: ฉีดเข้ากล้ามเนื้อ",
-   notes:"ผู้ใหญ่: ≤1.5 g/วัน ติดต่อกันไม่เกิน 7 วัน\nOtotoxic & Nephrotoxic\nไม่ควรใช้ในทารก สตรีมีครรภ์ และให้นมบุตร\nPregnancy: Category D",
-   ysite:[],pregnancy:"D",warnings:[]},
-
-  {name:"Streptomycin",form:"ผงแห้งปราศจากเชื้อ 1 g",cat:"Antibiotics",subcat:"Aminoglycosides",
-   reconstitution:"SWI 3.2 mL → 4 mL",
-   stabilityRecon:"48 ชม. ที่ 23-27°C\n14 วัน ที่ 2-8°C",
-   dilution:"-",stabilityDilute:"-",
-   admin:"IM: กล้ามเนื้อมัดใหญ่ลึกๆ",
-   notes:"Ototoxic & Nephrotoxic\nPregnancy: Category D",
-   ysite:[],pregnancy:"D",warnings:[]},
-
-  // Fluoroquinolones
-  {name:"Ciprofloxacin",form:"สารละลายปราศจากเชื้อ 200 mg/100 mL",cat:"Antibiotics",subcat:"Fluoroquinolones",
-   reconstitution:"-",stabilityRecon:"-",
-   dilution:"1-2 mg/mL",
-   stabilityDilute:"-",
-   admin:"IV infusion: ≥60 นาที",
-   notes:"⚠️ Y-site: ห้ามกับ heparin, Unasyn, MgSO₄, phenytoin, aminophylline, furosemide, NaHCO₃, hydrocortisone\nบริหารยาเร็ว → ความดันโลหิตตก\nห้ามแช่เย็น (อาจตกตะกอน)\nPregnancy: Category C",
-   ysite:["heparin","Unasyn","MgSO4","phenytoin","aminophylline","furosemide","NaHCO3","hydrocortisone"],pregnancy:"C",warnings:["noRefrig"]},
-
-  {name:"Levofloxacin",form:"สารละลายปราศจากเชื้อ 750 mg/150 mL",cat:"Antibiotics",subcat:"Fluoroquinolones",
-   reconstitution:"-",
-   stabilityRecon:"ยาคงตัว 3 ชั่วโมงหลังเปิดใช้ครั้งแรก",
-   dilution:"5 mg/mL",
-   stabilityDilute:"-",
-   admin:"IV infusion: ≥60 นาที (dose 750 mg: ≥90 นาที)",
-   notes:"⚠️ Y-site: ห้ามกับ acyclovir, furosemide, heparin, nitroglycerin, regular insulin\nใช้ภายใน 3 ชม. หลังเปิดขวด\nPregnancy: Category C",
-   ysite:["acyclovir","furosemide","heparin","nitroglycerin","regular insulin"],pregnancy:"C",warnings:[]},
-
-  // Macrolides
-  {name:"Azithromycin",form:"ผงแห้งปราศจากเชื้อ 500 mg",cat:"Antibiotics",subcat:"Macrolides",
-   reconstitution:"SWI 4.8 mL → 100 mg/mL",
-   stabilityRecon:"24 ชม. ที่ ≤30°C",
-   dilution:"D5W, NSS, NSS/2, D5S/2 — 1-2 mg/mL",
-   stabilityDilute:"24 ชม. ที่ 2-8°C",
-   admin:"IV infusion: ≥60 นาที\n⚠️ ห้าม IM และ IV bolus",
-   notes:"⚠️ Y-site: ห้ามกับ amikacin, cefotaxime, ceftriaxone, ceftazidime, furosemide, KCl, Tazocin, gentamicin\nPregnancy: Category B",
-   ysite:["amikacin","cefotaxime","ceftriaxone","ceftazidime","furosemide","KCl","Tazocin","gentamicin"],pregnancy:"B",warnings:[]},
-
-  // Lincosamides
-  {name:"Clindamycin phosphate",form:"สารละลายปราศจากเชื้อ 600 mg/4 mL",cat:"Antibiotics",subcat:"Lincosamides",
-   reconstitution:"-",
-   stabilityRecon:"เปิดแล้ว: ใช้ภายใน 48 ชม. ที่ 8°C",
-   dilution:"D5W หรือ NSS\n300/600 mg + สารน้ำ 50 mL\n900 mg + สารน้ำ 100 mL\nความเข้มข้นสุดท้าย ≤12 mg/mL",
-   stabilityDilute:"≤24 ชม. ที่อุณหภูมิห้อง",
-   admin:"IV infusion: อัตราไม่เร็วเกิน 30 mg/min\n300 mg: >10 นาที\n600 mg: >20 นาที\n900 mg: >30 นาที",
-   notes:"⚠️ Y-site: ห้ามกับ azithromycin\nห้ามใช้หากแพ้ Lincosamides\nPregnancy: Category B",
-   ysite:["azithromycin"],pregnancy:"B",warnings:[]},
-
-  // Tetracyclines
-  {name:"Tigecycline (Tygacil®)",form:"ผงยาแห้งสีส้ม 50 mg/vial",cat:"Antibiotics",subcat:"Tetracyclines",
-   reconstitution:"D5W หรือ NSS 5.3 mL → 10 mg/mL (ไม่แนะนำ SWI)",
-   stabilityRecon:"6 ชม. ที่อุณหภูมิห้อง",
-   dilution:"ดูด 5 mL ใส่ใน D5W/NSS 100 mL\nกรณีขนาด 100 mg: ละลาย 2 vials ใน 100 mL\nกรณีจำกัดน้ำ: ความเข้มข้นสูงสุด 1 mg/mL",
-   stabilityDilute:"48 ชม. ที่ 2-8°C\n(หากนำผงยาที่เก็บ 6 ชม. มาเจือจาง: 8 ชม. ที่ 25°C)",
-   admin:"IV infusion: 30-60 นาที",
-   notes:"⚠️ Y-site: ห้ามกับ amphotericin HCl\nไม่ควรใช้หากแพ้ tetracyclines\nPregnancy: Category D",
-   ysite:["amphotericin HCl"],pregnancy:"D",warnings:[]},
-
-  // Polymycins
-  {name:"Colistin (Colistate®)",form:"ผงแห้งปราศจากเชื้อ 150 mg/vial",cat:"Antibiotics",subcat:"Polymycins",
-   reconstitution:"SWI 2 mL → 75 mg/mL",
-   stabilityRecon:"7 วัน ที่ 2-8°C หรือ <25°C",
-   dilution:"D5S, D5W, NSS — ความเข้มข้นสูงสุด 1.6 mg/mL",
-   stabilityDilute:"24 ชม. ที่ <25°C",
-   admin:"IM: ฉีดเข้ากล้ามเนื้อ\nIV push: 3-5 นาที\nIV infusion: >30 นาที",
-   notes:"อาการทางระบบประสาท: ชารอบปาก รสชาติผิดปกติ เวียนศีรษะ → ลดขนาดยา\nNephrotoxic (สัมพันธ์กับขนาดยา)\nฉีด IM อาจทำให้ระบบหายใจล้มเหลว\nPregnancy: Category C",
-   ysite:[],pregnancy:"C",warnings:[]},
-
-  // Glycopeptide
-  {name:"Vancomycin HCl",form:"ผงแห้งปราศจากเชื้อ 1 g",cat:"Antibiotics",subcat:"Glycopeptide",
-   reconstitution:"SWI 20 mL → 50 mg/mL",
-   stabilityRecon:"14 วัน ในตู้เย็น",
-   dilution:"D5W หรือ NSS — ≤5 mg/mL (2.5-5 mg/mL; Max 10 mg/mL)",
-   stabilityDilute:"14 วัน ในตู้เย็น",
-   admin:"IV infusion: ≤10 mg/min\nDose <1 g: >60 นาที\nDose 1-2 g: >90 นาที",
-   notes:"⚠️ Y-site: ห้ามกับ albumin, Unasyn, cefazolin, cefotaxime, ceftazidime, ceftriaxone, heparin, omeprazole, lansoprazole, Tazocin\nให้ยาเร็ว → Red Man Syndrome\nความเข้มข้น >5 mg/mL → phlebitis\nPregnancy: Category C",
-   ysite:["albumin","Unasyn","cefazolin","cefotaxime","ceftazidime","ceftriaxone","heparin","omeprazole","lansoprazole","Tazocin"],pregnancy:"C",warnings:[]},
-
-  // Sulfonamides
-  {name:"Co-trimoxazole (TMP/SMX)",form:"สารละลายปราศจากเชื้อ 5 mL/ampoule\n(TMP 80 mg + SMX 400 mg)",cat:"Antibiotics",subcat:"Sulfonamides",
-   reconstitution:"-",stabilityRecon:"ไม่มีข้อมูล",
-   dilution:"ยา 1 หลอด (5 mL) ต่อ D5W/NSS ≥125-150 mL\n(ขั้นต่ำ 75 mL ต่อ 1 หลอด)\n(3.2 mg SMX/mL)",
-   stabilityDilute:"6 ชม. หลังเจือจาง",
-   admin:"IV infusion: ≤90 นาที",
-   notes:"⚠️ Y-site: ห้ามกับ midazolam HCl, cisatracurium\nห้ามใช้หากแพ้ sulfonamides\nPregnancy: Category D",
-   ysite:["midazolam","cisatracurium"],pregnancy:"D",warnings:[]},
-
-  // Misc antibiotics
-  {name:"Metronidazole",form:"สารละลาย 500 mg/100 mL",cat:"Antibiotics",subcat:"Miscellaneous",
-   reconstitution:"-",stabilityRecon:"-",
-   dilution:"5 mg/mL",
-   stabilityDilute:"-",
-   admin:"IV infusion: 30-60 นาที",
-   notes:"Pregnancy: Category B",
-   ysite:[],pregnancy:"B",warnings:[]},
-
-  {name:"Fosfomycin sodium (Fosmicin®)",form:"ผงแห้งปราศจากเชื้อ 2 g",cat:"Antibiotics",subcat:"Miscellaneous",
-   reconstitution:"D5W, NSS หรือ SWI 20 mL",
-   stabilityRecon:"48 ชม. ที่ 4-8°C\n24 ชม. ที่ 25°C\n6 ชม. ที่ 27-33°C",
-   dilution:"D5W, NSS → 100-500 mL (20-50 mg/mL)",
-   stabilityDilute:"ไม่มีข้อมูล",
-   admin:"IV infusion: 1-2 ชั่วโมง",
-   notes:"อาจเกิดหลอดเลือดดำอักเสบ\nติดตามตับและไตหากใช้ยานาน\nPregnancy: Category B",
-   ysite:[],pregnancy:"B",warnings:[]},
-
-  {name:"Amphotericin B",form:"ผงแห้งปราศจากเชื้อ 50 mg",cat:"Antibiotics",subcat:"Antifungal",
-   reconstitution:"D5W หรือ SWI 10 mL",
-   stabilityRecon:"-",
-   dilution:"D5W → 0.1 mg/mL\nCentral line: max 0.25 mg/mL",
-   stabilityDilute:"ป้องกันแสง — ≤24 ชม. ที่อุณหภูมิห้อง",
-   admin:"IV infusion: >2-6 ชั่วโมง",
-   notes:"Pregnancy: Category B",
-   ysite:[],pregnancy:"B",warnings:["light"]},
-
-  {name:"Acyclovir",form:"ผงแห้งปราศจากเชื้อ 500 mg",cat:"Antibiotics",subcat:"Antiviral",
-   reconstitution:"D5W หรือ NSS 10 mL",
-   stabilityRecon:"≤12 ชม. ที่อุณหภูมิห้อง (ห้ามแช่เย็น)",
-   dilution:"→ ความเข้มข้น 5 mg/mL (max 7 mg/mL)",
-   stabilityDilute:"≤24 ชม. ที่อุณหภูมิห้อง",
-   admin:"IV infusion: >1 ชั่วโมง",
-   notes:"⚠️ ห้ามแช่เย็น\nPregnancy: Category B",
-   ysite:[],pregnancy:"B",warnings:["noRefrig"]},
-
-  // ===== NON-ANTIBIOTICS =====
-  {name:"Adrenaline (Epinephrine)",form:"1 mg/mL (1:1000) 1 mL",cat:"Non-Antibiotic",subcat:"Vasoactive",
-   reconstitution:"-",stabilityRecon:"-",
-   dilution:"D5W, NSS\nIV Push: NSS 10 mL (1:10,000)\nIV Infusion: D5W 250-500 mL",
-   stabilityDilute:"24 ชม. ที่อุณหภูมิห้อง",
-   admin:"IM, SC, IV, Intracardiac\nIM: หลีกเลี่ยงสะโพก\nIV Push (ผู้ใหญ่ 1:10,000): 5-10 นาที\nIV Infusion: 1-4 mcg/kg/min (ผู้ใหญ่)",
-   notes:"เก็บในภาชนะป้องกันแสง\nทิ้งหากสารละลายเป็นสีชมพูอ่อน น้ำตาลอ่อน หรือตกตะกอน\nPregnancy: Category C",
-   ysite:[],pregnancy:"C",warnings:["light"]},
-
-  {name:"Aminophylline",form:"250 mg/10 mL",cat:"Non-Antibiotic",subcat:"Bronchodilator",
-   reconstitution:"-",stabilityRecon:"-",
-   dilution:"D5W, D5S, NSS\nDirect IV: ไม่ต้องเจือจาง\nIV Infusion: 250 mg ใน 50 mL; >250-500 mg ใน 100 mL\nContinuous: 500-1000 mL",
-   stabilityDilute:"ใช้ภายใน 24 ชม. หลังเจือจาง",
-   admin:"Direct IV: ≤25 mg/min\nIV Infusion loading: 20-30 นาที\nContinuous: ≤25 mg/min",
-   notes:"Rate สูง → cardiac arrhythmias\nไม่ควรให้ IM (ปวดกล้ามเนื้อ)\nPregnancy: Category C",
-   ysite:[],pregnancy:"C",warnings:[]},
-
-  {name:"Amiodarone",form:"150 mg/3 mL",cat:"Non-Antibiotic",subcat:"Antiarrhythmic",
-   reconstitution:"-",stabilityRecon:"-",
-   dilution:"D5W เท่านั้น — ใส่ขวดแก้วหรือ polyolefin, ป้องกันแสง\nPeripheral: max 2 mg/mL\nCentral: 2-6 mg/mL",
-   stabilityDilute:"24 ชม. ที่อุณหภูมิห้อง",
-   admin:"IV infusion ทาง central vein (infusion pump)\nIV Push: ไม่แนะนำ (เฉพาะฉุกเฉิน: 300 mg หรือ 5 mg/kg)\nIV Infusion: 60-120 นาที\nอัตรา <30 mg/min",
-   notes:"⚠️ ความเข้มข้น >3 mg/mL ใน D5W → peripheral phlebitis\nPregnancy: Category D",
-   ysite:[],pregnancy:"D",warnings:["light"]},
-
-  {name:"Calcium Gluconate",form:"1 g/10 mL (Ca²⁺ 0.45 mEq/mL)",cat:"Non-Antibiotic",subcat:"Electrolyte",
-   reconstitution:"-",stabilityRecon:"-",
-   dilution:"SWI หรือ D5W เท่านั้น — max 20 mg/mL",
-   stabilityDilute:"24 ชม. ที่ 25°C",
-   admin:"Rapid IV: max 50 mg/min\nIV infusion: max 20 mg/mL ให้ >1 ชม.",
-   notes:"⚠️ ห้ามผสมกับ Bicarbonates, Carbonates, Phosphates, Sulfates, Clindamycin, Amphotericin B (ตกตะกอน!)\n⚠️ ห้ามผสมใน NSS\nฉีดช้าๆ ≤0.7-1.8 mEq/min\nPregnancy: Category C",
-   ysite:[],pregnancy:"C",warnings:[]},
-
-  {name:"Dexamethasone",form:"4 mg/mL",cat:"Non-Antibiotic",subcat:"Corticosteroid",
-   reconstitution:"-",stabilityRecon:"-",
-   dilution:"NSS หรือ D5W → 1 mg/mL",
-   stabilityDilute:"24 ชม. ที่อุณหภูมิห้อง / 2 วันในตู้เย็น",
-   admin:"IM, SC, intra-articular, intralesional\nIV push: >1-3 นาที\nIV drip: >30 นาที",
-   notes:"Pregnancy: Category C",
-   ysite:[],pregnancy:"C",warnings:[]},
-
-  {name:"Diazepam",form:"10 mg/mL",cat:"Non-Antibiotic",subcat:"Sedative",
-   reconstitution:"-",stabilityRecon:"-",
-   dilution:"NSS หรือ D5W",
-   stabilityDilute:"6 ชม. ในตู้เย็น",
-   admin:"IM\nIV push: >3 นาที",
-   notes:"ไม่แนะนำ IV infusion (อาจตกตะกอน ความคงตัวไม่แน่นอน)\nPregnancy: Category D",
-   ysite:[],pregnancy:"D",warnings:[]},
-
-  {name:"Dobutamine",form:"250 mg/20 mL",cat:"Non-Antibiotic",subcat:"Vasoactive",
-   reconstitution:"-",stabilityRecon:"-",
-   dilution:"D5W, D5S/2, D5S, D10W, NSS, LRS — max 5 mg/mL",
-   stabilityDilute:"D5W (1-6 mg/mL): 24 ชม. ในขวดแก้ว / 2 ชม. ใน PVC",
-   admin:"Max rate: 40 mcg/kg/min",
-   notes:"⚠️ ห้ามผสมกับ Sodium Bicarbonate\nPregnancy: Category B",
-   ysite:[],pregnancy:"B",warnings:[]},
-
-  {name:"Dopamine",form:"250 mg/10 mL",cat:"Non-Antibiotic",subcat:"Vasoactive",
-   reconstitution:"-",stabilityRecon:"-",
-   dilution:"NSS, D5W, D5S, NSS/2, D5S/2, Sodium Lactate, LRS — max 3.2 mg/mL\nสูตรมาตรฐาน: 1:1 = 1 amp + D5W 250 mL",
-   stabilityDilute:"24 ชม. หลังเจือจาง",
-   admin:"Maintenance: 2-20 mcg/kg/min\nMax: 20 mcg/kg/min\nRenal: 1-3 mcg/kg/min",
-   notes:"⚠️ ห้ามผสมกับสารละลายด่าง: KCl, NaHCO₃, iron salts\nPregnancy: Category C",
-   ysite:[],pregnancy:"C",warnings:[]},
-
-  {name:"Digoxin",form:"0.5 mg/2 mL",cat:"Non-Antibiotic",subcat:"Cardiac",
-   reconstitution:"-",stabilityRecon:"-",
-   dilution:"D5W, NSS, SWI — เจือจาง >4 เท่า",
-   stabilityDilute:"48 ชม. ที่อุณหภูมิห้อง",
-   admin:"IV push ช้าๆ >5 นาที\nIV infusion: >20 นาที",
-   notes:"Pregnancy: Category C",
-   ysite:[],pregnancy:"C",warnings:[]},
-
-  {name:"Diltiazem",form:"50 mg/vial",cat:"Non-Antibiotic",subcat:"Calcium Channel Blocker",
-   reconstitution:"D5W หรือ NSS",
-   stabilityRecon:"ใช้ทันทีหลังผสม",
-   dilution:"D5W หรือ NSS ≥5 mL",
-   stabilityDilute:"24 ชม. ที่อุณหภูมิห้อง",
-   admin:"IV push: >3 นาที",
-   notes:"Pregnancy: Category C",
-   ysite:[],pregnancy:"C",warnings:[]},
-
-  {name:"Dipotassium phosphate",form:"1.74 g/20 mL (K⁺ 20 mEq, Phosphorus 10 mmol)",cat:"Non-Antibiotic",subcat:"Electrolyte",
-   reconstitution:"-",stabilityRecon:"-",
-   dilution:"⚠️ ต้องเจือจางก่อนเสมอ\nMax K⁺: 40 mEq/L (Peripheral/Central)\nMax P: 20 mmol/L",
-   stabilityDilute:"24 ชม. ที่อุณหภูมิห้อง",
-   admin:"⚠️ ห้าม IV push/Bolus\nPeripheral: ≤20 mEq/hr\nปกติ: 15 mmol/250 mL drip 4-6 ชม.\nICU: ~7.5 mmol/hr",
-   notes:"⚠️ ห้ามเติมใน LRS, Acetar® (ตกตะกอน!)\nหลีกเลี่ยงผสมกับยาที่มี Ca²⁺ หรือ Mg²⁺\nPregnancy: Category C",
-   ysite:[],pregnancy:"C",warnings:[]},
-
-  {name:"Enoxaparin",form:"60 mg/0.6 mL",cat:"Non-Antibiotic",subcat:"Anticoagulant",
-   reconstitution:"-",stabilityRecon:"-",
-   dilution:"NSS, D5W, D5S, ARI — max 0.1 mg/mL",
-   stabilityDilute:"48 ชม. ที่อุณหภูมิห้อง",
-   admin:"SC เท่านั้น (ห้าม IM, IV)",
-   notes:"Antidote: Protamine 1 mg neutralize 1 mg enoxaparin\nPregnancy: Category B",
-   ysite:[],pregnancy:"B",warnings:[]},
-
-  {name:"Esmolol",form:"100 mg/10 mL",cat:"Non-Antibiotic",subcat:"Beta-Blocker",
-   reconstitution:"-",
-   stabilityRecon:"24 ชม. ที่อุณหภูมิห้องหรือตู้เย็น",
-   dilution:"NSS หรือ D5W — max 10 mg/mL (เสี่ยง venous irritation; central line: >10 mg/mL ได้)",
-   stabilityDilute:"24 ชม. ที่อุณหภูมิห้องหรือตู้เย็น",
-   admin:"Tachycardia: max 200 mcg/kg/min\nHypertension: max 300 mcg/kg/min",
-   notes:"Pregnancy: Category C",
-   ysite:[],pregnancy:"C",warnings:[]},
-
-  {name:"Esomeprazole",form:"40 mg/vial",cat:"Non-Antibiotic",subcat:"PPI",
-   reconstitution:"NSS 5 mL",
-   stabilityRecon:"12 ชม. ที่อุณหภูมิห้อง",
-   dilution:"NSS, D5W, LRS → 50 mL",
-   stabilityDilute:"D5W: 6 ชม.\nNSS/LRS: 12 ชม.",
-   admin:"IV infusion: 10-30 นาที",
-   notes:"Pregnancy: Category B",
-   ysite:[],pregnancy:"B",warnings:[]},
-
-  {name:"Fentanyl",form:"100 mcg/2 mL, 500 mcg/10 mL",cat:"Non-Antibiotic",subcat:"Opioid Analgesic",
-   reconstitution:"-",stabilityRecon:"-",
-   dilution:"D5W หรือ NSS — 10 mcg/mL (ทั่วไป)",
-   stabilityDilute:"≤24 ชม. ที่ 2-8°C",
-   admin:"Infusion: 0.5-2 mcg/kg/hr\nTitrate 25 mcg/hr ทุก 30 นาที",
-   notes:"ระวัง Serotonin syndrome เมื่อใช้ร่วมกับ MAOIs, SNRIs, SSRIs, tramadol, pethidine\nPregnancy: Category C",
-   ysite:[],pregnancy:"C",warnings:[]},
-
-  {name:"Furosemide",form:"20 mg/2 mL, 250 mg/25 mL",cat:"Non-Antibiotic",subcat:"Diuretic",
-   reconstitution:"-",stabilityRecon:"-",
-   dilution:"D5W หรือ NSS → 50 mL หรือ undiluted",
-   stabilityDilute:"24 ชม. ที่อุณหภูมิห้อง",
-   admin:"IV push, IM, Continuous infusion\nMax rate: 4 mg/min",
-   notes:"⚠️ ห้ามแช่เย็น\nให้ยาเร็วเกิน → ototoxic\nทิ้งหากสารละลายเป็นสีเหลือง\nPregnancy: Category C",
-   ysite:[],pregnancy:"C",warnings:["noRefrig"]},
-
-  {name:"Haloperidol",form:"50 mg/1 mL",cat:"Non-Antibiotic",subcat:"Antipsychotic",
-   reconstitution:"-",stabilityRecon:"-",
-   dilution:"D5W — 0.5-100 mg / 50-100 mL (ไม่ควรใช้ NSS)",
-   stabilityDilute:"7 วัน ที่ 25°C",
-   admin:"Direct IV: 5 mg/min\nIntermittent: >30 นาที หรือ 25 mg/hr",
-   notes:"Flush ด้วย NSS ก่อนและหลัง\nPregnancy: Category C",
-   ysite:[],pregnancy:"C",warnings:[]},
-
-  {name:"Heparin",form:"5000 IU/mL",cat:"Non-Antibiotic",subcat:"Anticoagulant",
-   reconstitution:"-",
-   stabilityRecon:"เปิดแล้ว: 14 วัน ที่ 2-8°C",
-   dilution:"D5W หรือ NSS — 50-100 units/mL (infusion pump)",
-   stabilityDilute:"24 ชม. ที่ 15-25°C",
-   admin:"SC\nIV push: 1 นาที\nIV drip: 4-24 ชม.\nห้าม IM (hematoma!)",
-   notes:"Antidote: protamine sulphate\nPregnancy: Category C",
-   ysite:[],pregnancy:"C",warnings:[]},
-
-  {name:"Hydrocortisone",form:"100 mg/vial",cat:"Non-Antibiotic",subcat:"Corticosteroid",
-   reconstitution:"SWFI 2 mL",
-   stabilityRecon:"72 ชม. ที่ 25°C",
-   dilution:"NSS หรือ D5W\nIV infusion: 50-100 mL\nSeptic shock: 200 mg/24 ชม. = 1 vial ใน 100 mL",
-   stabilityDilute:"Conc 1 mg/mL: 24 ชม.\nConc >1 mg/mL: 4 ชม.",
-   admin:"Direct IV: 30 วินาที-10 นาที\nIV infusion <150 mg: >30 นาที; >150 mg: >60 นาที\nSeptic shock: 8 mL/hr continuous 24 ชม.",
-   notes:"⚠️ ห้ามผสม Glucose\nเก็บโดยป้องกันแสง\nPregnancy: Category C",
-   ysite:[],pregnancy:"C",warnings:["light"]},
-
-  {name:"Insulin Regular",form:"100 U/mL (10 mL)",cat:"Non-Antibiotic",subcat:"Endocrine",
-   reconstitution:"-",
-   stabilityRecon:"หลังเปิด: ใช้ภายใน 1 เดือน (แนะนำตู้เย็น)",
-   dilution:"NSS หรือ NSS/2 → 100 U/100 mL",
-   stabilityDilute:"NSS: 14 วัน ในตู้เย็น",
-   admin:"SC, IV\nIV infusion: 50 U/min",
-   notes:"Pregnancy: Category B",
-   ysite:[],pregnancy:"B",warnings:[]},
-
-  {name:"Ketamine",form:"500 mg/10 mL",cat:"Non-Antibiotic",subcat:"Sedative/Anesthetic",
-   reconstitution:"-",
-   stabilityRecon:"เปิดแล้ว: 8 วัน ที่ 2-8°C",
-   dilution:"NSS, D5W, SWI\nIM: ไม่ต้องเจือจาง\nDirect IV: 1 mg/mL (กรณีจำกัดน้ำ: 2 mg/mL)\nIV Infusion: 1-2 mg/mL",
-   stabilityDilute:"24 ชม. ที่ 2-8°C",
-   admin:"Direct IV: ≤0.5 mg/kg/min หรือ ≤60 วินาที",
-   notes:"Pregnancy: Category NA",
-   ysite:[],pregnancy:"NA",warnings:[]},
-
-  {name:"Levetiracetam",form:"500 mg/5 mL",cat:"Non-Antibiotic",subcat:"Antiepileptic",
-   reconstitution:"-",stabilityRecon:"-",
-   dilution:"NSS, D5W, หรือ LR 100 mL ต่อยา 500 mg (5 mg/mL)\nกรณีจำกัดน้ำ: max 15 mg/mL",
-   stabilityDilute:"24 ชม. ที่ 15-30°C",
-   admin:"IV infusion: ≥15 นาที\nIV bolus: 3-5 นาที\nICU continuous: 200-400 mg/hr",
-   notes:"Pregnancy: Category C",
-   ysite:[],pregnancy:"C",warnings:[]},
-
-  {name:"Magnesium Sulfate",form:"50% 2 mL = 1 g/2 mL\n10% 10 mL = 1 g/10 mL",cat:"Non-Antibiotic",subcat:"Electrolyte",
-   reconstitution:"-",stabilityRecon:"-",
-   dilution:"NSS, D5W, Ringer\nDirect IV: ≤20%\nกันชัก: 4 g ใน 250 mL\nเสริม Mg: 5 g ใน 1000 mL",
-   stabilityDilute:"24 ชม. ที่อุณหภูมิห้อง",
-   admin:"Direct IV: <150 mg/min\nIV Infusion: <2 g/ชม.\nSevere eclampsia: 4 g/hr\n10% MgSO₄ สามารถ IV push ได้",
-   notes:"⚠️ ห้ามแช่เย็น (ตกตะกอน!)\nPregnancy: Category B",
-   ysite:[],pregnancy:"B",warnings:["noRefrig"]},
-
-  {name:"Methylprednisolone",form:"1 g/vial",cat:"Non-Antibiotic",subcat:"Corticosteroid",
-   reconstitution:"Solvent (SWI) ที่ให้มา → 16 mL",
-   stabilityRecon:"48 ชม. ที่อุณหภูมิห้อง",
-   dilution:"NSS หรือ D5W\n60-100 mg ใน 50 mL\n101-500 mg ใน 100 mL\n501-2500 mg ใน 250 mL",
-   stabilityDilute:"48 ชม. ที่อุณหภูมิห้อง",
-   admin:"IM\nIV push: >5-15 นาที\nIV infusion: >30-60 นาที",
-   notes:"ไม่แนะนำแช่เย็น\nมี benzyl alcohol 140.4 mg เป็น preservative\nPregnancy: Category C",
-   ysite:[],pregnancy:"C",warnings:[]},
-
-  {name:"Midazolam",form:"5 mg/mL, 15 mg/3 mL",cat:"Non-Antibiotic",subcat:"Sedative",
-   reconstitution:"-",stabilityRecon:"-",
-   dilution:"NSS, D5W, D5S, Ringer\nIM: ไม่ต้องเจือจาง\nDirect IV: 1 mL + NSS/SWI 4 mL (1 mg/mL)\nIV Infusion: 0.2-0.5 mg/mL",
-   stabilityDilute:"72 ชม. ในD5W/NSS (อุณหภูมิห้องหรือตู้เย็น)",
-   admin:"Direct IV: >2 นาที\nIV Infusion (ICU sedation): 20-100 mcg/kg/hr",
-   notes:"รอผลการตอบสนอง ≥2 นาที ก่อนปรับขนาดยา\nPregnancy: Category D",
-   ysite:[],pregnancy:"D",warnings:[]},
-
-  {name:"Milrinone",form:"10 mg/10 mL",cat:"Non-Antibiotic",subcat:"Vasoactive",
-   reconstitution:"-",stabilityRecon:"-",
-   dilution:"D5W หรือ NSS — แนะนำ 0.2 mg/mL (ยา 2 amp ใน 100 mL)",
-   stabilityDilute:"3 วัน ที่อุณหภูมิห้อง",
-   admin:"Loading: IV bolus >10 นาที\nMaintenance: 0.375-0.75 mcg/kg/min",
-   notes:"Max dose: 1.13 mcg/kg/วัน\nPregnancy: Category C",
-   ysite:[],pregnancy:"C",warnings:[]},
-
-  {name:"Morphine",form:"10 mg/1 mL",cat:"Non-Antibiotic",subcat:"Opioid Analgesic",
-   reconstitution:"-",stabilityRecon:"-",
-   dilution:"NSS, D5W, D10W, SWI, Ringer\nIM/SC: ไม่ต้องเจือจาง\nDirect IV: SWI >5 mL\nIV Infusion: 0.1-1 mg/mL (Std: 0.1 mg/mL)",
-   stabilityDilute:"24 ชม. ที่อุณหภูมิห้อง",
-   admin:"Direct IV: >4-5 นาที",
-   notes:"หากยาเป็นสีเหลืองหรือน้ำตาล → สลายตัว\nให้เร็ว → กดการหายใจ, ความดันโลหิตต่ำ\nPregnancy: Category C",
-   ysite:[],pregnancy:"C",warnings:[]},
-
-  {name:"N-Acetylcysteine (NAC)",form:"300 mg/3 mL",cat:"Non-Antibiotic",subcat:"Antidote",
-   reconstitution:"-",
-   stabilityRecon:"24 ชม. ที่อุณหภูมิห้อง (ห้ามแช่เย็น)",
-   dilution:"D5W, NSS, NSS/2",
-   stabilityDilute:"24 ชม. ที่อุณหภูมิห้อง (ห้ามแช่เย็น)",
-   admin:"Step 1: 150 mg/kg ใน D5W 200 mL → >15 นาที\nStep 2: 50 mg/kg ใน D5W 500 mL → >4 ชม.\nStep 3: 100 mg/kg ใน D5W 1000 mL → 16 ชม.",
-   notes:"ยาเปลี่ยนเป็นสีชมพู/ม่วงได้ — ไม่มีผลต่อประสิทธิภาพ\nหากใช้ร่วมยาปฏิชีวนะ: ให้ห่างกัน 1-2 ชม.\nPregnancy: Category B",
-   ysite:[],pregnancy:"B",warnings:["noRefrig"]},
-
-  {name:"Nicardipine",form:"2 mg/2 mL",cat:"Non-Antibiotic",subcat:"Calcium Channel Blocker",
-   reconstitution:"-",stabilityRecon:"-",
-   dilution:"D5W, D5S/2, D5S, NSS/2, NSS — 0.1 mg/mL (จำกัดน้ำ: max 0.2 mg/mL)",
-   stabilityDilute:"24 ชม. ที่อุณหภูมิห้อง (ขวดแก้วหรือ PVC)",
-   admin:"IV push: 1-2 นาที\nIV infusion: เริ่ม 2-10 mcg/kg/min\nAcute hypertension: เริ่ม 5 mg/hr → max 15 mg/hr",
-   notes:"⚠️ ห้ามผสมกับ NaHCO₃ หรือ LRS\nควรให้ทาง central line หรือ large peripheral vein\nเปลี่ยนตำแหน่งทุก 12 ชม.\nPregnancy: Category C",
-   ysite:[],pregnancy:"C",warnings:[]},
-
-  {name:"Nitroglycerin",form:"50 mg/10 mL",cat:"Non-Antibiotic",subcat:"Vasodilator",
-   reconstitution:"-",stabilityRecon:"-",
-   dilution:"NSS หรือ D5W — 200 mcg/mL (ยา 50 mg ใน 240 mL)\nConc: 50-100 mcg/mL (max 400 mcg/mL)",
-   stabilityDilute:"ขวดแก้ว: 48 ชม. / 7 วัน ตู้เย็น\nขวดพลาสติก: 24 ชม.",
-   admin:"IV infusion: เริ่ม 5 mcg/min → titrate 5 mcg/min ทุก 3-5 นาที",
-   notes:"⚠️ ห้ามใช้ภาชนะหรือ infusion set PVC (ดูดซับ >80%!)\nPregnancy: Category C",
-   ysite:[],pregnancy:"C",warnings:[]},
-
-  {name:"Norepinephrine",form:"4 mg/4 mL",cat:"Non-Antibiotic",subcat:"Vasoactive",
-   reconstitution:"-",stabilityRecon:"-",
-   dilution:"D5S หรือ D5W\nStd: 16 mcg/mL = ยา 1 amp + D5W 244 mL",
-   stabilityDilute:"24 ชม. ที่อุณหภูมิห้อง",
-   admin:"เริ่ม 0.5-1 mcg/min\nทั่วไป: 8-30 mcg/min\nMax: 30 mcg/min",
-   notes:"⚠️ หลีกเลี่ยง saline เดี่ยว (Dextrose ป้องกัน oxidation)\n⚠️ ห้ามหยุดยาทันที (rebound hypotension!)\nระวัง Extravasation\nทิ้งหากสารละลายขุ่น/เปลี่ยนสี\nPregnancy: Category C",
-   ysite:[],pregnancy:"C",warnings:[]},
-
-  {name:"Nitroprusside Sodium",form:"50 mg/vial",cat:"Non-Antibiotic",subcat:"Vasodilator",
-   reconstitution:"NSS หรือ D5W 3 mL",
-   stabilityRecon:"-",
-   dilution:"D5W 250, 500 หรือ 1000 mL → 200, 100 หรือ 50 mcg/mL",
-   stabilityDilute:"D5W: 24 ชม. (ตู้เย็นหรืออุณหภูมิห้อง)",
-   admin:"IV infusion เท่านั้น (ห้าม IV push)\nMax: 10 mcg/kg/min",
-   notes:"⚠️ หากสีเปลี่ยน (ส้ม/น้ำตาลเข้ม/น้ำเงิน) → ห้ามใช้ (ปลดปล่อย cyanide!)\n⚠️ ต้องหุ้มภาชนะป้องกันแสงขณะให้ยา\nPregnancy: Category C",
-   ysite:[],pregnancy:"C",warnings:["light"]},
-
-  {name:"Omeprazole",form:"40 mg/vial",cat:"Non-Antibiotic",subcat:"PPI",
-   reconstitution:"SWI 10 mL",
-   stabilityRecon:"4 ชม. ที่อุณหภูมิห้อง",
-   dilution:"NSS หรือ D5W\nIV Infusion: 40 mg ใน 50-100 mL\nContinuous: 8 mg/hr = 40 mg ใน 100 mL",
-   stabilityDilute:"≤4 ชม. (ป้องกันการเปลี่ยนแปลงทางกายภาพ)",
-   admin:"Direct IV: ≥5 นาที (max 4 mL/min)\nIV Infusion: ≥20-30 นาที\nContinuous: 20 mL/hr (8 mg/hr)",
-   notes:"ให้ช้าๆ (เสี่ยง phlebitis)\nPregnancy: Category C",
-   ysite:[],pregnancy:"C",warnings:[]},
-
-  {name:"Ondansetron",form:"4 mg/2 mL",cat:"Non-Antibiotic",subcat:"Antiemetic",
-   reconstitution:"-",stabilityRecon:"-",
-   dilution:"NSS, D5W, D5N, D5N/2, 3% NaCl — 50-100 mL",
-   stabilityDilute:"48 ชม. ที่อุณหภูมิห้อง",
-   admin:"IM\nIV (>30 วินาที)\nIV infusion: 15-30 นาที",
-   notes:"Pregnancy: Category B",
-   ysite:[],pregnancy:"B",warnings:[]},
-
-  {name:"Oxytocin",form:"10 U/mL",cat:"Non-Antibiotic",subcat:"Obstetric",
-   reconstitution:"-",stabilityRecon:"-",
-   dilution:"NSS, D5W, RLS — เจือจางใน 500-1000 mL",
-   stabilityDilute:"NSS/D5W: 6 ชม. อุณหภูมิห้อง / 24 ชม. ตู้เย็น",
-   admin:"SC, IM, Intrauterus\nIV Infusion: เริ่ม 0.5-2 mU/min → เพิ่ม 1-2 mU/min ทุก 15-30 นาที",
-   notes:"⚠️ ห้ามเตรียมในสารละลายที่มี Sulfite\nPregnancy: Category NA",
-   ysite:[],pregnancy:"NA",warnings:[]},
-
-  {name:"Pantoprazole (PantoVal®)",form:"40 mg — Direct IV, IV infusion",cat:"Non-Antibiotic",subcat:"PPI",
-   reconstitution:"-",stabilityRecon:"-",
-   dilution:"NSS หรือ D5W\nDirect IV: NSS 10 mL\nIV Infusion: 40-80 mg ใน 100 mL\nContinuous: 8 mg/hr = 80 mg ใน 100 mL",
-   stabilityDilute:"12 ชม. ที่ 25°C",
-   admin:"Direct IV: >2 นาที\nIV Infusion: 15 นาที (≤7 mL/min)\nContinuous: 10 mL/hr",
-   notes:"Pregnancy: Category B",
-   ysite:[],pregnancy:"B",warnings:[]},
-
-  {name:"Parecoxib (Dynastat®)",form:"40 mg/vial",cat:"Non-Antibiotic",subcat:"NSAID",
-   reconstitution:"NSS หรือ D5W 2 mL",
-   stabilityRecon:"≤12 ชม. ที่อุณหภูมิห้อง (ห้ามแช่เย็น/แช่แข็ง)",
-   dilution:"NSS, D5W, D5S, D5S/2",
-   stabilityDilute:"-",
-   admin:"IV หรือ IM",
-   notes:"⚠️ ห้ามผสมกับ LRS หรือ 5% Glucose in LRS (ตกตะกอน!)\nไม่แนะนำ SWI (ไม่เป็น isotonic)\nPregnancy: Category C (AUS)",
-   ysite:[],pregnancy:"C",warnings:[]},
-
-  {name:"Pethidine (Meperidine)",form:"50 mg/1 mL",cat:"Non-Antibiotic",subcat:"Opioid Analgesic",
-   reconstitution:"-",stabilityRecon:"-",
-   dilution:"NSS, D5W, SWI, RLS\nDirect IV: <10 mg/mL\nIV Infusion: <1 mg/mL",
-   stabilityDilute:"NSS: 24 ชม. ที่อุณหภูมิห้อง",
-   admin:"SC/IM: undiluted\nDirect IV: ช้าๆ ≥5 นาที\nIV Infusion: 15-35 mg/hr",
-   notes:"Pregnancy: Category C",
-   ysite:[],pregnancy:"C",warnings:[]},
-
-  {name:"Phenytoin",form:"250 mg/5 mL",cat:"Non-Antibiotic",subcat:"Antiepileptic",
-   reconstitution:"-",
-   stabilityRecon:"24 ชม. ที่อุณหภูมิห้อง",
-   dilution:"NSS เท่านั้น\nDirect IV: ไม่ต้องเจือจาง\nIV Infusion: NSS ≤50 mL (แนะนำ 1-10 mg/mL)",
-   stabilityDilute:"ใช้ทันทีหลังเจือจาง (ภายใน 1 ชม.)",
-   admin:"Direct IV: ≤50 mg/นาที (เร็วเกิน → severe hypotension!)\nIV Infusion: ≤50 mg/min, 1-4 ชม.\nFlush ด้วย NSS ก่อนและหลัง",
-   notes:"⚠️ ห้ามแช่เย็น (ตกตะกอน!)\nหลีกเลี่ยง IM (ปวดมาก)\nMonitor: BP, EKG, Vital signs\nPregnancy: Category D",
-   ysite:[],pregnancy:"D",warnings:["noRefrig"]},
-
-  {name:"Potassium Chloride (KCl)",form:"20 mEq/10 mL",cat:"Non-Antibiotic",subcat:"Electrolyte",
-   reconstitution:"-",stabilityRecon:"-",
-   dilution:"NSS, D5S, D5S/2, D5W, D10W, Ringer\nPeripheral: max 40 mEq/L\nCentral: max 200 mEq/L",
-   stabilityDilute:"24 ชม. ที่อุณหภูมิห้อง",
-   admin:"Slow IV Infusion เท่านั้น\nK >2.5 mEq/L: max 10 mEq/hr\nK <2.5 mEq/L: max 40 mEq/hr",
-   notes:"⚠️ ห้าม IV push/Bolus!\nหลังเจือจางพลิกถุง ≥10 ครั้ง\nระวัง extravasation\nIf rate 10-20 mEq/hr: monitor HR, BP, EKG\nPregnancy: Category C",
-   ysite:[],pregnancy:"C",warnings:[]},
-
-  {name:"Propofol",form:"200 mg/20 mL",cat:"Non-Antibiotic",subcat:"Sedative/Anesthetic",
-   reconstitution:"-",
-   stabilityRecon:"6 ชม. ที่อุณหภูมิห้อง (หลังเปิด)",
-   dilution:"NSS หรือ D5W\nDirect IV: ไม่ต้องเจือจาง หรือ D5W → 2 mg/mL\nMax: 10 mg/mL",
-   stabilityDilute:"-",
-   admin:"IV push: >20-30 วินาที\nIV infusion: <60 นาที",
-   notes:"Antidote: Physostigmine\nPregnancy: Category B",
-   ysite:[],pregnancy:"B",warnings:[]},
-
-  {name:"Ranitidine",form:"50 mg/2 mL",cat:"Non-Antibiotic",subcat:"H2 Blocker",
-   reconstitution:"-",stabilityRecon:"-",
-   dilution:"NSS หรือ D5W → 50 mg/20 mL หรือ 50 mg/50 mL",
-   stabilityDilute:"24 ชม. ที่อุณหภูมิห้อง",
-   admin:"IV bolus: max 2.5 mg/mL, ≤4 mL/min (5 นาที)\nIV infusion: ≥20-30 นาที",
-   notes:"ป้องกันแสง\nห้ามแช่แข็ง\nPregnancy: Category B",
-   ysite:[],pregnancy:"B",warnings:["light"]},
-
-  {name:"Rocuronium",form:"50 mg/5 mL",cat:"Non-Antibiotic",subcat:"Neuromuscular Blocker",
-   reconstitution:"-",stabilityRecon:"-",
-   dilution:"NSS, D5W, D5S — 0.5 mg/mL หรือ 1 mg/mL",
-   stabilityDilute:"24 ชม. ที่อุณหภูมิห้อง หรือ 2-8°C",
-   admin:"IM\nIV infusion: 0.3-0.4 mg/kg/hr (infusion pump)",
-   notes:"⚠️ ห้ามผสมกับ thiopental หรือยาที่มีฤทธิ์เป็นด่าง\nFlush ด้วย NSS หลังให้ยา\nPregnancy: ไม่ระบุ",
-   ysite:[],pregnancy:"-",warnings:[]},
-
-  {name:"Sodium Bicarbonate",form:"7.5% 50 mL = 44.6 mEq",cat:"Non-Antibiotic",subcat:"Electrolyte",
-   reconstitution:"-",stabilityRecon:"-",
-   dilution:"NSS, D5W, D5S\nผู้ใหญ่: ไม่ต้องเจือจาง\nเด็ก: เจือจาง >4.2%",
-   stabilityDilute:"24 ชม. ที่อุณหภูมิห้อง",
-   admin:"IV push cardiac arrest: 5 mL/min\nIV drip: >4-8 ชม.\nMax: 1 mEq/kg/hr",
-   notes:"ให้เร็ว (10 mL/min) → hypernatremia, ↓ CSF pressure, intracranial hemorrhage\nPregnancy: Category C",
-   ysite:[],pregnancy:"C",warnings:[]},
-
-  {name:"Terbutaline",form:"0.5 mg/1 mL (500 mcg)",cat:"Non-Antibiotic",subcat:"Bronchodilator",
-   reconstitution:"-",stabilityRecon:"-",
-   dilution:"NSS หรือ D5W\nIV Infusion: 500 mcg + D5W 100 mL (5 mcg/mL)",
-   stabilityDilute:"48 ชม.",
-   admin:"SC\nIV Infusion Premature labor: 2.5-5 mcg/min\nเพิ่มทุก 20-30 นาที (max 17.5-30 mcg/min)\nต่อเนื่อง ≤48-72 ชม.",
-   notes:"IV ใช้เฉพาะผู้ป่วยเฉพาะราย (ยับยั้งการหดตัวมดลูก)\nห้ามแช่เย็น\nPregnancy: Category C",
-   ysite:[],pregnancy:"C",warnings:["noRefrig"]},
-
-  {name:"Tramadol HCl",form:"100 mg/2 mL",cat:"Non-Antibiotic",subcat:"Analgesic",
-   reconstitution:"-",stabilityRecon:"-",
-   dilution:"NSS หรือ D5W\nSC/IM/Direct IV: เจือจางหรือไม่ก็ได้\nIV Infusion: 0.5-4 mg/mL",
-   stabilityDilute:"5 วัน ที่อุณหภูมิห้อง",
-   admin:"Direct IV: ช้าๆ 2-3 นาที (เร็วเกิน → คลื่นไส้)\nMax: 400 mg/วัน",
-   notes:"Pregnancy: Category C",
-   ysite:[],pregnancy:"C",warnings:[]},
-
-  {name:"Tranexamic Acid",form:"5% 250 mg/5 mL",cat:"Non-Antibiotic",subcat:"Antifibrinolytic",
-   reconstitution:"-",stabilityRecon:"-",
-   dilution:"NSS, D5W, D10W, RLS\nIV Infusion: ≥50 mL\nNebulize: 250-500 mg + NSS 5-10 mL",
-   stabilityDilute:"24 ชม. ในตู้เย็น",
-   admin:"Direct IV: ช้าๆ >5 นาที (≤1 mL/min) (max 100 mg/min)\nIV Infusion: 15-30 นาที\nNebulize: 30 นาที",
-   notes:"ให้เร็ว → hypotension\nPregnancy: Category B",
-   ysite:[],pregnancy:"B",warnings:[]},
-
-  {name:"Valproic Acid",form:"400 mg/4 mL",cat:"Non-Antibiotic",subcat:"Antiepileptic",
-   reconstitution:"-",stabilityRecon:"-",
-   dilution:"NSS, D5W, RLS\nIV Infusion: ≥50 mL",
-   stabilityDilute:"24 ชม. ที่อุณหภูมิห้อง",
-   admin:"IV Infusion: ≥60 นาที\nMax rate: ≤20 mg/min",
-   notes:"Pregnancy: Category D",
-   ysite:[],pregnancy:"D",warnings:[]},
-
-  {name:"Vancomycin HCl",form:"ผงแห้งปราศจากเชื้อ 1 g",cat:"Antibiotics",subcat:"Glycopeptide",
-   reconstitution:"SWI 20 mL → 50 mg/mL",
-   stabilityRecon:"14 วัน ในตู้เย็น",
-   dilution:"D5W หรือ NSS — ≤5 mg/mL (2.5-5 mg/mL; Max 10 mg/mL)",
-   stabilityDilute:"14 วัน ในตู้เย็น",
-   admin:"IV infusion: ≤10 mg/min\nDose <1 g: >60 นาที\nDose 1-2 g: >90 นาที",
-   notes:"⚠️ Y-site ห้ามกับหลายชนิด (ดูรายละเอียด)\nให้ยาเร็ว → Red Man Syndrome\nความเข้มข้น >5 mg/mL → phlebitis\nPregnancy: Category C",
-   ysite:["albumin","Unasyn","cefazolin","cefotaxime","ceftazidime","ceftriaxone","heparin","omeprazole","lansoprazole","Tazocin"],pregnancy:"C",warnings:[]}
+const D=[
+{name:"Ampicillin sodium",form:"ผงแห้งปราศจากเชื้อ 1 g",cat:"Antibiotics",sub:"Penicillins",rc:"IM: ละลาย 1 g + SWI 3.5 mL (250 mg/mL)\nIV: ละลาย 1 g + SWI 5 mL",sr:"ไม่แนะนำเก็บใน vial — ทิ้งทันที",dl:"NSS 125, 250 หรือ 500 mL (10-20 mg/mL)",sd:"4 ชม. ที่อุณหภูมิห้อง",ad:"IV infusion: >10-15 นาที",nt:"อาการแพ้ยา: ผื่น คัน หายใจผิดปกติ\nPregnancy: Category B",ys:[],pg:"B",wn:[]},
+{name:"Benzathine benzylpenicillin",form:"ผงแห้งปราศจากเชื้อ 1.2 MU",cat:"Antibiotics",sub:"Penicillins",rc:"0.6 MU + SWI ≥2 mL\n1.2 MU + SWI ≥3 mL\n2.4 MU + SWI ≥4 mL",sr:"ไม่แนะนำเก็บ — ทิ้งทันที",dl:"-",sd:"-",ad:"IM เท่านั้น: ฉีดเข้ากล้ามเนื้อลึกๆ สะโพก (Hochstetter's field)\nเด็ก: กล้ามเนื้อโคนขาด้านข้าง (18-20G, 1 นิ้ว)",nt:"⚠️ ห้าม SC, IV — อาจเกิด cardiopulmonary arrest และตายได้!\nPregnancy: Category B",ys:[],pg:"B",wn:["noIV"]},
+{name:"Cloxacillin sodium",form:"ผงแห้งปราศจากเชื้อ 1 g",cat:"Antibiotics",sub:"Penicillins",rc:"IM: SWI 4 หรือ 8 mL (125/250 mg/mL)\nIV: SWI 10 หรือ 20 mL (50/100 mg/mL)",sr:"24 ชม. ที่ <30°C\n48 ชม. ในตู้เย็น (2-8°C)",dl:"D5W หรือ NSS <20 mg/mL (แนะนำ NSS — phlebitis น้อยกว่า)",sd:"12 ชม. ที่อุณหภูมิห้อง",ad:"IM: 2-4 นาที | IV bolus: ช้าๆ 2-4 นาที | IV infusion: 30-40 นาที",nt:"ติดตามอาการแพ้ยาหลังได้ยาครั้งแรก\nติดตาม phlebitis\nPregnancy: Category B",ys:[],pg:"B",wn:[]},
+{name:"Penicillin G sodium",form:"ผงแห้งปราศจากเชื้อ 5 MU",cat:"Antibiotics",sub:"Penicillins",rc:"ละลาย 5 MU + SWI 8.2 mL (500,000 units/mL)",sr:"3 วัน ในตู้เย็น (2-8°C)",dl:"D5W, NSS, N/2 (40,000 UI/mL หรือ 100,000 UI/mL ใช้ N/2)",sd:"24 ชม. ที่อุณหภูมิห้อง",ad:"IM: กล้ามเนื้อลึกๆ | IV infusion: 15-30 นาที",nt:"ห้ามใช้หากแพ้ penicillins\nระวังผู้ป่วยไตบกพร่องและโรคลมชัก\nPregnancy: Category B",ys:[],pg:"B",wn:[]},
+{name:"Cefazolin sodium",form:"ผงแห้งปราศจากเชื้อ 1 g",cat:"Antibiotics",sub:"Cephalosporins",rc:"IM: SWI 2.5 mL | IV: SWI 10 mL",sr:"24 ชม. ที่ <25°C\n72 ชม. ในตู้เย็น (2-8°C)",dl:"D5W, D10W, LRS, NSS — ยา 1 g ต่อสารน้ำ ≥50 mL (20 mg/mL)",sd:"24 ชม. ที่ <25°C | 72 ชม. ในตู้เย็น",ad:"IM: deep IM | IV push: ≥5 นาที | IV infusion: 30-60 นาที",nt:"⚠️ Y-site: ห้ามกับ vancomycin\nPregnancy: Category B",ys:["vancomycin"],pg:"B",wn:[]},
+{name:"Cefotaxime sodium",form:"ผงแห้งปราศจากเชื้อ 1 g",cat:"Antibiotics",sub:"Cephalosporins",rc:"SWI 4 mL → 250 mg/mL",sr:"12 ชม. ที่ 25°C\n24 ชม. ตู้เย็น (2-8°C, ป้องกันแสง)",dl:"NSS หรือ D5W — ยา 1 g เจือจาง 40-100 mL (20-40 mg/mL)",sd:"12 ชม. ที่ 25°C | 24 ชม. ตู้เย็น (ป้องกันแสง)",ad:"IV infusion: ≥50-60 นาที",nt:"⚠️ Y-site: ห้ามกับ azithromycin, vancomycin\nห้ามใช้หากแพ้ beta-lactam อย่างรุนแรง\nPregnancy: Category B",ys:["azithromycin","vancomycin"],pg:"B",wn:[]},
+{name:"Ceftazidime",form:"ผงแห้งปราศจากเชื้อ 1 g",cat:"Antibiotics",sub:"Cephalosporins",rc:"IM: SWI 3 mL | IV: SWI 10 mL",sr:"18 ชม. ที่ <25°C",dl:"D5W, D5S, NSS, LRS — ยา 1 g ต่อสารน้ำ ≥50 mL (20-40 mg/mL)",sd:"24 ชม. ที่ 25°C | 7 วัน ในตู้เย็น (2-8°C)",ad:"IM: Gluteus maximus บน-นอก | IV infusion: ≥30 นาที",nt:"⚠️ Y-site: ห้ามกับ amiodarone, amphotericin B, vancomycin, phenytoin, nicardipine\nPregnancy: Category B",ys:["amiodarone","amphotericin B","vancomycin","phenytoin","nicardipine"],pg:"B",wn:[]},
+{name:"Ceftriaxone sodium",form:"ผงแห้งปราศจากเชื้อ 1 g",cat:"Antibiotics",sub:"Cephalosporins",rc:"IV: SWI 10 mL | IM: 1% lidocaine HCl 3.5 mL",sr:"6 ชม. อุณหภูมิห้อง | 24 ชม. ตู้เย็น (2-8°C)",dl:"D5W, D10W, NSS, NSS/2 — ≥50 mL (20-40 mg/mL)",sd:"6 ชม. อุณหภูมิห้อง | 24 ชม. ตู้เย็น",ad:"IM: deep IM สะโพก | IV infusion: ≥30 นาที",nt:"⚠️ ห้ามผสมในสารน้ำที่มี Ca²⁺ — ตกตะกอน!\nไม่แนะนำ IV push\nPregnancy: Category B",ys:[],pg:"B",wn:[]},
+{name:"Amoxicillin/Clavulanate",form:"ผงปราศจากเชื้อ amoxicillin 1 g + clavulanic acid 200 mg",cat:"Antibiotics",sub:"BL/BLI",rc:"ละลาย 1.2 g + SWI 20 mL",sr:"20 นาที หลังละลาย",dl:"NSS 100 mL (10-20 mg/mL)",sd:"24 ชม. ที่ 25°C",ad:"IV bolus: ช้าๆ 3-4 นาที | IV infusion: ≥30-40 นาที",nt:"⚠️ ห้ามผสมกับ aminoglycosides\nห้ามผสมกับ glucose, dextran, bicarbonate\nPregnancy: Category B",ys:[],pg:"B",wn:[]},
+{name:"Ampicillin/Sulbactam",form:"ผงปราศจากเชื้อ ampicillin 2 g + sulbactam 1 g",cat:"Antibiotics",sub:"BL/BLI",rc:"ละลาย 3 g + SWI 6.4 mL → 8 mL (375 mg/mL)",sr:"ไม่แนะนำเก็บใน vial",dl:"NSS*, D5W, LRS, D5S/2 — ยา 3 g ใน NSS 100 mL ≤45 mg/mL",sd:"NSS: 8 ชม. ที่ 25°C / 72 ชม. ที่ 4°C\nD5W: 4 ชม. ในตู้เย็น",ad:"IM: กล้ามเนื้อลึกๆ (อาจใช้ 0.5% lidocaine)\nIV infusion: 15-30 นาที",nt:"⚠️ Y-site: ห้ามกับ amiodarone, nicardipine, ciprofloxacin\nห้ามใช้หากแพ้ penicillins\nPregnancy: Category B",ys:["amiodarone","nicardipine","ciprofloxacin"],pg:"B",wn:[]},
+{name:"Cefoperazone/Sulbactam",form:"ผงปราศจากเชื้อ cefoperazone 1 g + sulbactam 0.5 g",cat:"Antibiotics",sub:"BL/BLI",rc:"ละลาย 1.5 g + D5W/NSS/SWI/D5S 3.2 mL → 4 mL",sr:"ตู้เย็น (2-8°C) 24 ชม.",dl:"NSS, D5W, D5S 100 mL",sd:"ไม่ควรเก็บยาที่เหลือ",ad:"IV infusion: ≥15-60 นาที",nt:"⚠️ Y-site: ห้ามกับ aminoglycosides\nห้ามใช้หากแพ้ beta-lactam\nติดตาม PT (อาจทำให้ PT prolong)\nPregnancy: Category B",ys:["aminoglycosides"],pg:"B",wn:[]},
+{name:"Piperacillin/Tazobactam",form:"ผงปราศจากเชื้อ piperacillin 4 g + tazobactam 0.5 g",cat:"Antibiotics",sub:"BL/BLI",rc:"ละลาย 4.5 g + NSS หรือ SWI 20 mL",sr:"24 ชม. ที่ <25°C | 48 ชม. ที่ 2-8°C",dl:"D5W หรือ NSS 50-150 mL (40-80 mg/mL)",sd:"24 ชม. ที่ <25°C | 7 วัน ที่ 2-8°C",ad:"IV infusion: ≥30 นาที",nt:"⚠️ Y-site: ห้ามกับ amiodarone, acyclovir, vancomycin\nห้ามใช้หากแพ้ penicillins/cephalosporins\nPregnancy: Category B",ys:["amiodarone","acyclovir","vancomycin"],pg:"B",wn:[]},
+{name:"Ertapenem (Invanz®)",form:"ผงแห้งปราศจากเชื้อ 1 g",cat:"Antibiotics",sub:"Carbapenems",rc:"IV: SWI/NSS 10 mL\nIM: 1%/2% lidocaine HCl 3.2 mL",sr:"IV: นำไปเจือจาง NSS ทันที | IM: ≤1 ชม.",dl:"NSS ≥50 mL (20 mg/mL)",sd:"6 ชม. ที่ 25°C | 24 ชม. ที่ 2-8°C",ad:"IM: deep IM | IV infusion: ≥30 นาที",nt:"⚠️ สารละลายที่ละลายด้วย lidocaine ห้าม IV\nห้ามใช้สารน้ำที่มี dextrose\nPregnancy: Category C",ys:[],pg:"C",wn:[]},
+{name:"Imipenem/Cilastatin (Tienam®)",form:"ผงแห้งปราศจากเชื้อ imipenem 500 mg + cilastatin 500 mg",cat:"Antibiotics",sub:"Carbapenems",rc:"ดูด D5W/NSS/D5S 10 mL ออกจากขวด IV 100 mL ละลายผงยาใน vial (2 ครั้ง) แล้วเทกลับ",sr:"ไม่แนะนำเก็บใน vial",dl:"D5W, NSS, D5S 100 mL (5 mg/mL)",sd:"24 ชม. ที่ 4°C | 4 ชม. ที่ 25°C",ad:"IV infusion:\n≤500 mg → 20-30 นาที\n>500 mg → 40-60 นาที",nt:"⚠️ Y-site: ห้ามกับ amiodarone, NaHCO₃, azithromycin\nอาจแพ้ข้ามกลุ่ม beta-lactam\nCrCl <5 mL/min + hemodialysis: เสี่ยงชัก\nPregnancy: Category C",ys:["amiodarone","NaHCO₃","azithromycin"],pg:"C",wn:[]},
+{name:"Meropenem",form:"ผงแห้งปราศจากเชื้อ 1 g",cat:"Antibiotics",sub:"Carbapenems",rc:"SWI 20 mL",sr:"8 ชม. ที่ 20-25°C | 48 ชม. ที่ 2-8°C",dl:"D5W, D5S, D10W, NSS — 1-20 mg/mL (≥50 mL)",sd:"NSS: 8 ชม. ที่ 20-25°C / 48 ชม. ตู้เย็น\nD5W: 3 ชม. ที่ 20-25°C / 14 ชม. ตู้เย็น",ad:"IV infusion: ช้าๆ 15-30 นาที",nt:"⚠️ Y-site: ห้ามกับ acyclovir, diazepam, amphotericin B, calcium gluconate\nอาจแพ้ข้ามกลุ่ม beta-lactam\nPregnancy: Category B",ys:["acyclovir","diazepam","amphotericin B","calcium gluconate"],pg:"B",wn:[]},
+{name:"Biapenem",form:"ผงแห้งปราศจากเชื้อ 0.3 g",cat:"Antibiotics",sub:"Carbapenems",rc:"NSS 10 mL (ห้ามใช้ WFI)",sr:"6 ชม. ที่อุณหภูมิห้อง",dl:"Isotonic (D5W, D5S, D10W, NSS) → 100 mL",sd:"24 ชม. ที่ 2-8°C",ad:"IV infusion: 30-60 นาที",nt:"ขนาดยาสูงสุด 1.2 g/วัน\nไม่ควรผสมกับสารละลายที่มี L-cystine\nPregnancy: Category NA",ys:[],pg:"NA",wn:[]},
+{name:"Amikacin",form:"สารละลายปราศจากเชื้อ 500 mg/2 mL",cat:"Antibiotics",sub:"Aminoglycosides",rc:"-",sr:"-",dl:"NSS, D5W, LRS — 0.25-5 mg/mL",sd:"24 ชม. ที่ 25°C",ad:"IM: กล้ามเนื้อมัดใหญ่\nIV infusion: 30-60 นาที",nt:"⚠️ Ototoxic & Nephrotoxic — ติดตามการทำงานของไต\nไม่ควรใช้ในทารก สตรีมีครรภ์ และให้นมบุตร\nPregnancy: Category D",ys:[],pg:"D",wn:[]},
+{name:"Gentamicin",form:"สารละลายปราศจากเชื้อ 80 mg/2 mL (40 mg/mL)",cat:"Antibiotics",sub:"Aminoglycosides",rc:"-",sr:"-",dl:"D5W หรือ NSS — <3 mg/mL\n(<150 mg: 50 mL | >150 mg: 100 mL)",sd:"ไม่มีข้อมูล",ad:"IM: เข้ากล้ามเนื้อ\nIV infusion: ≥30-120 นาที",nt:"⚠️ Y-site: ห้ามกับ azithromycin, furosemide, heparin\nOtotoxic\nมี methylparaben/propylparaben — ห้ามฉีดเข้าช่องน้ำไขสันหลัง\nPregnancy: Category D",ys:["azithromycin","furosemide","heparin"],pg:"D",wn:[]},
+{name:"Kanamycin",form:"ผงแห้งปราศจากเชื้อ 1 g",cat:"Antibiotics",sub:"Aminoglycosides",rc:"SWI 3 mL",sr:"ทิ้งทันทีหลังใช้",dl:"-",sd:"-",ad:"IM เข้ากล้ามเนื้อ",nt:"ผู้ใหญ่: ≤1.5 g/วัน ≤7 วัน\nOtotoxic & Nephrotoxic\nไม่ควรใช้ในทารก สตรีมีครรภ์และให้นมบุตร\nPregnancy: Category D",ys:[],pg:"D",wn:[]},
+{name:"Streptomycin",form:"ผงแห้งปราศจากเชื้อ 1 g",cat:"Antibiotics",sub:"Aminoglycosides",rc:"SWI 3.2 mL → 4 mL",sr:"48 ชม. ที่ 23-27°C | 14 วัน ที่ 2-8°C",dl:"-",sd:"-",ad:"IM: กล้ามเนื้อมัดใหญ่ลึกๆ",nt:"Ototoxic & Nephrotoxic\nPregnancy: Category D",ys:[],pg:"D",wn:[]},
+{name:"Ciprofloxacin",form:"สารละลายปราศจากเชื้อ 200 mg/100 mL",cat:"Antibiotics",sub:"Fluoroquinolones",rc:"-",sr:"-",dl:"1-2 mg/mL",sd:"-",ad:"IV infusion: ≥60 นาที",nt:"⚠️ Y-site: ห้ามกับ heparin, Unasyn, MgSO₄, phenytoin, aminophylline, furosemide, NaHCO₃, hydrocortisone\nให้เร็ว → ความดันโลหิตตก\n⚠️ ห้ามแช่เย็น (ตกตะกอน)\nPregnancy: Category C",ys:["heparin","Unasyn","MgSO₄","phenytoin","aminophylline","furosemide","NaHCO₃","hydrocortisone"],pg:"C",wn:["noRefrig"]},
+{name:"Levofloxacin",form:"สารละลายปราศจากเชื้อ 750 mg/150 mL",cat:"Antibiotics",sub:"Fluoroquinolones",rc:"-",sr:"คงตัว 3 ชม. หลังเปิดใช้ครั้งแรก",dl:"5 mg/mL",sd:"-",ad:"IV infusion: ≥60 นาที (dose 750 mg: ≥90 นาที)\nใช้ภายใน 3 ชม. หลังเปิดขวด",nt:"⚠️ Y-site: ห้ามกับ acyclovir, furosemide, heparin, nitroglycerin, regular insulin\nPregnancy: Category C",ys:["acyclovir","furosemide","heparin","nitroglycerin","regular insulin"],pg:"C",wn:[]},
+{name:"Azithromycin",form:"ผงแห้งปราศจากเชื้อ 500 mg",cat:"Antibiotics",sub:"Macrolides",rc:"SWI 4.8 mL → 100 mg/mL",sr:"24 ชม. ที่ ≤30°C",dl:"D5W, NSS, NSS/2, D5S/2 — 1-2 mg/mL",sd:"24 ชม. ที่ 2-8°C",ad:"IV infusion: ≥60 นาที\n⚠️ ห้าม IM และ IV bolus",nt:"⚠️ Y-site: ห้ามกับ amikacin, cefotaxime, ceftriaxone, ceftazidime, furosemide, KCl, Tazocin, gentamicin\nPregnancy: Category B",ys:["amikacin","cefotaxime","ceftriaxone","ceftazidime","furosemide","KCl","Tazocin","gentamicin"],pg:"B",wn:[]},
+{name:"Clindamycin phosphate",form:"สารละลายปราศจากเชื้อ 600 mg/4 mL",cat:"Antibiotics",sub:"Lincosamides",rc:"-",sr:"เปิดแล้ว: ใช้ภายใน 48 ชม. ที่ 8°C",dl:"D5W หรือ NSS ≤12 mg/mL\n300/600 mg + สารน้ำ 50 mL\n900 mg + สารน้ำ 100 mL",sd:"≤24 ชม. ที่อุณหภูมิห้อง",ad:"IV infusion อัตรา ≤30 mg/min:\n300 mg: >10 นาที | 600 mg: >20 นาที | 900 mg: >30 นาที",nt:"⚠️ Y-site: ห้ามกับ azithromycin\nห้ามใช้หากแพ้ Lincosamides\nPregnancy: Category B",ys:["azithromycin"],pg:"B",wn:[]},
+{name:"Tigecycline (Tygacil®)",form:"ผงยาแห้งสีส้ม 50 mg/vial",cat:"Antibiotics",sub:"Tetracyclines",rc:"D5W หรือ NSS 5.3 mL → 10 mg/mL (ไม่แนะนำ SWI)",sr:"6 ชม. ที่อุณหภูมิห้อง",dl:"ดูด 5 mL ใส่ D5W/NSS 100 mL\nจำกัดน้ำ: max 1 mg/mL",sd:"48 ชม. ที่ 2-8°C",ad:"IV infusion: 30-60 นาที",nt:"⚠️ Y-site: ห้ามกับ amphotericin HCl\nไม่ควรใช้หากแพ้ tetracyclines\nPregnancy: Category D",ys:["amphotericin HCl"],pg:"D",wn:[]},
+{name:"Colistin (Colistate®)",form:"ผงแห้งปราศจากเชื้อ 150 mg/vial",cat:"Antibiotics",sub:"Polymycins",rc:"SWI 2 mL → 75 mg/mL",sr:"7 วัน ที่ 2-8°C หรือ <25°C",dl:"D5S, D5W, NSS — max 1.6 mg/mL",sd:"24 ชม. ที่ <25°C",ad:"IM: เข้ากล้ามเนื้อ\nIV push: 3-5 นาที\nIV infusion: >30 นาที",nt:"อาการทางระบบประสาท: ชารอบปาก รสชาติผิดปกติ เวียนศีรษะ → ลดขนาดยา\nNephrotoxic (สัมพันธ์กับขนาดยา)\nฉีด IM อาจทำให้ระบบหายใจล้มเหลว\nPregnancy: Category C",ys:[],pg:"C",wn:[]},
+{name:"Vancomycin HCl",form:"ผงแห้งปราศจากเชื้อ 1 g",cat:"Antibiotics",sub:"Glycopeptide",rc:"SWI 20 mL → 50 mg/mL",sr:"14 วัน ในตู้เย็น",dl:"D5W หรือ NSS — ≤5 mg/mL (2.5-5 mg/mL; max 10 mg/mL)",sd:"14 วัน ในตู้เย็น",ad:"IV infusion ≤10 mg/min\nDose <1 g: >60 นาที | Dose 1-2 g: >90 นาที",nt:"⚠️ Y-site: ห้ามกับ albumin, Unasyn, cefazolin, cefotaxime, ceftazidime, ceftriaxone, heparin, omeprazole, lansoprazole, Tazocin\nให้เร็ว → Red Man Syndrome\nความเข้มข้น >5 mg/mL → phlebitis\nPregnancy: Category C",ys:["albumin","Unasyn","cefazolin","cefotaxime","ceftazidime","ceftriaxone","heparin","omeprazole","lansoprazole","Tazocin"],pg:"C",wn:[]},
+{name:"Co-trimoxazole (TMP/SMX)",form:"สารละลายปราศจากเชื้อ 5 mL/ampoule (TMP 80 mg + SMX 400 mg)",cat:"Antibiotics",sub:"Sulfonamides",rc:"-",sr:"ไม่มีข้อมูล",dl:"D5W/NSS ≥125-150 mL ต่อ 1 หลอด (ขั้นต่ำ 75 mL/หลอด)\n3.2 mg SMX/mL",sd:"6 ชม. หลังเจือจาง",ad:"IV infusion: ≤90 นาที",nt:"⚠️ Y-site: ห้ามกับ midazolam HCl, cisatracurium\nห้ามใช้หากแพ้ sulfonamides\nPregnancy: Category D",ys:["midazolam","cisatracurium"],pg:"D",wn:[]},
+{name:"Metronidazole",form:"สารละลาย 500 mg/100 mL",cat:"Antibiotics",sub:"Miscellaneous",rc:"-",sr:"-",dl:"5 mg/mL",sd:"-",ad:"IV infusion: 30-60 นาที",nt:"Pregnancy: Category B",ys:[],pg:"B",wn:[]},
+{name:"Fosfomycin sodium (Fosmicin®)",form:"ผงแห้งปราศจากเชื้อ 2 g",cat:"Antibiotics",sub:"Miscellaneous",rc:"D5W, NSS หรือ SWI 20 mL",sr:"48 ชม. ที่ 4-8°C | 24 ชม. ที่ 25°C | 6 ชม. ที่ 27-33°C",dl:"D5W, NSS → 100-500 mL (20-50 mg/mL)",sd:"ไม่มีข้อมูล",ad:"IV infusion: 1-2 ชม.",nt:"อาจเกิดหลอดเลือดดำอักเสบ\nติดตามตับและไตหากใช้ยานาน\nPregnancy: Category B",ys:[],pg:"B",wn:[]},
+{name:"Amphotericin B",form:"ผงแห้งปราศจากเชื้อ 50 mg",cat:"Antibiotics",sub:"Antifungal",rc:"D5W หรือ SWI 10 mL",sr:"-",dl:"D5W → 0.1 mg/mL\nCentral line: max 0.25 mg/mL",sd:"ป้องกันแสง — ≤24 ชม. ที่อุณหภูมิห้อง",ad:"IV infusion: >2-6 ชม.",nt:"เก็บป้องกันแสง\nPregnancy: Category B",ys:[],pg:"B",wn:["light"]},
+{name:"Acyclovir",form:"ผงแห้งปราศจากเชื้อ 500 mg",cat:"Antibiotics",sub:"Antiviral",rc:"D5W หรือ NSS 10 mL",sr:"≤12 ชม. ที่อุณหภูมิห้อง",dl:"→ 5 mg/mL (max 7 mg/mL)",sd:"≤24 ชม. ที่อุณหภูมิห้อง",ad:"IV infusion: >1 ชม.",nt:"⚠️ ห้ามแช่เย็น\nPregnancy: Category B",ys:[],pg:"B",wn:["noRefrig"]},
+{name:"Adrenaline (Epinephrine)",form:"1 mg/mL (1:1000) 1 mL",cat:"Non-Antibiotic",sub:"Vasoactive",rc:"-",sr:"-",dl:"D5W, NSS\nIV Push: NSS 10 mL (1:10,000)\nIV Infusion: D5W 250-500 mL",sd:"24 ชม. ที่อุณหภูมิห้อง",ad:"IM, SC, IV, Intracardiac\nIM: หลีกเลี่ยงสะโพก\nIV Push (ผู้ใหญ่): 5-10 นาที\nIV Infusion: 1-4 mcg/kg/min",nt:"เก็บป้องกันแสง\nทิ้งหากสารละลายเปลี่ยนสีหรือตกตะกอน\nPregnancy: Category C",ys:[],pg:"C",wn:["light"]},
+{name:"Aminophylline",form:"250 mg/10 mL",cat:"Non-Antibiotic",sub:"Bronchodilator",rc:"-",sr:"-",dl:"D5W, D5S, NSS\nDirect IV: ไม่ต้องเจือจาง\nIV Infusion: 250 mg/50 mL; >250-500 mg/100 mL\nContinuous: 500-1000 mL",sd:"24 ชม. หลังเจือจาง",ad:"Direct IV: ≤25 mg/min\nIV Infusion loading: 20-30 นาที\nContinuous: ≤25 mg/min",nt:"Rate สูง → cardiac arrhythmias\nไม่ควรให้ IM\nPregnancy: Category C",ys:[],pg:"C",wn:[]},
+{name:"Amiodarone",form:"150 mg/3 mL",cat:"Non-Antibiotic",sub:"Antiarrhythmic",rc:"-",sr:"-",dl:"D5W เท่านั้น — ขวดแก้วหรือ polyolefin, ป้องกันแสง\nPeripheral: max 2 mg/mL | Central: 2-6 mg/mL",sd:"24 ชม. ที่อุณหภูมิห้อง (1-6 mg/mL)",ad:"IV infusion ทาง central vein (infusion pump)\nIV Push เฉพาะฉุกเฉิน: 300 mg หรือ 5 mg/kg\nIV Infusion: 60-120 นาที (อัตรา <30 mg/min)",nt:"⚠️ >3 mg/mL ใน D5W → peripheral phlebitis\nPregnancy: Category D",ys:[],pg:"D",wn:["light"]},
+{name:"Calcium Gluconate",form:"1 g/10 mL (Ca²⁺ 0.45 mEq/mL)",cat:"Non-Antibiotic",sub:"Electrolyte",rc:"-",sr:"-",dl:"SWI หรือ D5W เท่านั้น — max 20 mg/mL",sd:"24 ชม. ที่ 25°C",ad:"Rapid IV: max 50 mg/min\nIV infusion: max 20 mg/mL ให้ >1 ชม.",nt:"⚠️ ห้ามผสมกับ Bicarbonates, Carbonates, Phosphates, Sulfates, Clindamycin, Amphotericin B → ตกตะกอน!\n⚠️ ห้ามผสมใน NSS\nฉีดช้าๆ ≤0.7-1.8 mEq/min\nPregnancy: Category C",ys:[],pg:"C",wn:[]},
+{name:"Desmopressin (DDAVP)",form:"4 mcg/mL",cat:"Non-Antibiotic",sub:"Endocrine",rc:"-",sr:"-",dl:"NSS — ความเข้มข้นไม่เกิน 0.7 mcg/mL",sd:"ใช้ทันทีหลังเตรียมยา",ad:"IV drip: >15-30 นาที",nt:"ADH activity: Pressor activity [DDAVP: 2000-4000: 1 Vasopressin: 1:1]",ys:[],pg:"-",wn:[]},
+{name:"Dexamethasone",form:"4 mg/mL",cat:"Non-Antibiotic",sub:"Corticosteroid",rc:"-",sr:"-",dl:"NSS หรือ D5W → 1 mg/mL",sd:"24 ชม. ที่อุณหภูมิห้อง | 2 วัน ในตู้เย็น",ad:"IM, SC, intra-articular, intralesional\nIV push: >1-3 นาที | IV drip: >30 นาที",nt:"Pregnancy: Category C",ys:[],pg:"C",wn:[]},
+{name:"Diazepam",form:"10 mg/mL",cat:"Non-Antibiotic",sub:"Sedative",rc:"-",sr:"-",dl:"NSS หรือ D5W",sd:"6 ชม. ในตู้เย็น",ad:"IM | IV push: >3 นาที",nt:"ไม่แนะนำ IV infusion (อาจตกตะกอน ความคงตัวไม่แน่นอน)\nPregnancy: Category D",ys:[],pg:"D",wn:[]},
+{name:"Dobutamine",form:"250 mg/20 mL",cat:"Non-Antibiotic",sub:"Vasoactive",rc:"-",sr:"-",dl:"D5W, D5S/2, D5S, D10W, NSS, LRS — max 5 mg/mL",sd:"D5W (1-6 mg/mL): 24 ชม. ขวดแก้ว / 2 ชม. ใน PVC",ad:"Max rate: 40 mcg/kg/min",nt:"⚠️ ห้ามผสมกับ Sodium Bicarbonate\nPregnancy: Category B",ys:[],pg:"B",wn:[]},
+{name:"Dopamine",form:"250 mg/10 mL",cat:"Non-Antibiotic",sub:"Vasoactive",rc:"-",sr:"-",dl:"NSS, D5W, D5S, NSS/2, D5S/2, LRS — max 3.2 mg/mL\nสูตรมาตรฐาน: 1:1 = 1 amp + D5W 250 mL",sd:"24 ชม. หลังเจือจาง",ad:"Maintenance: 2-20 mcg/kg/min\nMax: 20 mcg/kg/min | Renal: 1-3 mcg/kg/min",nt:"⚠️ ห้ามผสมกับสารด่าง: KCl, NaHCO₃, iron salts\nPregnancy: Category C",ys:[],pg:"C",wn:[]},
+{name:"Digoxin",form:"0.5 mg/2 mL",cat:"Non-Antibiotic",sub:"Cardiac",rc:"-",sr:"-",dl:"D5W, NSS, SWI — เจือจาง >4 เท่า",sd:"48 ชม. ที่อุณหภูมิห้อง",ad:"IV push ช้าๆ >5 นาที | IV infusion: >20 นาที",nt:"Pregnancy: Category C",ys:[],pg:"C",wn:[]},
+{name:"Diltiazem",form:"50 mg/vial",cat:"Non-Antibiotic",sub:"CCB",rc:"D5W หรือ NSS",sr:"ใช้ทันทีหลังผสม",dl:"D5W หรือ NSS ≥5 mL",sd:"24 ชม. ที่อุณหภูมิห้อง",ad:"IV push: >3 นาที",nt:"Pregnancy: Category C",ys:[],pg:"C",wn:[]},
+{name:"Dipotassium Phosphate",form:"1.74 g/20 mL (K⁺ 20 mEq, P 10 mmol)",cat:"Non-Antibiotic",sub:"Electrolyte",rc:"-",sr:"-",dl:"⚠️ ต้องเจือจางก่อนเสมอ\nPeripheral/Central: max K⁺ 40 mEq/L, max P 20 mmol/L",sd:"24 ชม. ที่อุณหภูมิห้อง",ad:"⚠️ ห้าม IV push/Bolus\nPeripheral: ≤20 mEq/hr\nปกติ: 15 mmol/250 mL 4-6 ชม. | ICU: ~7.5 mmol/hr",nt:"⚠️ ห้ามเติมใน LRS, Acetar® (ตกตะกอน!)\nหลีกเลี่ยงผสมกับยาที่มี Ca²⁺ หรือ Mg²⁺\nPregnancy: Category C",ys:[],pg:"C",wn:[]},
+{name:"Enoxaparin",form:"60 mg/0.6 mL",cat:"Non-Antibiotic",sub:"Anticoagulant",rc:"-",sr:"-",dl:"NSS, D5W, D5S, ARI — max 0.1 mg/mL",sd:"48 ชม. ที่อุณหภูมิห้อง",ad:"SC เท่านั้น (ห้าม IM, IV)",nt:"Antidote: Protamine 1 mg neutralize enoxaparin 1 mg\nPregnancy: Category B",ys:[],pg:"B",wn:[]},
+{name:"Esmolol",form:"100 mg/10 mL",cat:"Non-Antibiotic",sub:"Beta-Blocker",rc:"-",sr:"24 ชม. ที่อุณหภูมิห้อง/ตู้เย็น",dl:"NSS หรือ D5W — max 10 mg/mL (central: >10 mg/mL ได้)",sd:"24 ชม. ที่อุณหภูมิห้อง/ตู้เย็น",ad:"Tachycardia: max 200 mcg/kg/min\nHypertension: max 300 mcg/kg/min",nt:"Pregnancy: Category C",ys:[],pg:"C",wn:[]},
+{name:"Esomeprazole",form:"40 mg/vial",cat:"Non-Antibiotic",sub:"PPI",rc:"NSS 5 mL",sr:"12 ชม. ที่อุณหภูมิห้อง",dl:"NSS, D5W, LRS → 50 mL",sd:"D5W: 6 ชม. | NSS/LRS: 12 ชม.",ad:"IV infusion: 10-30 นาที",nt:"Pregnancy: Category B",ys:[],pg:"B",wn:[]},
+{name:"Fentanyl",form:"100 mcg/2 mL, 500 mcg/10 mL",cat:"Non-Antibiotic",sub:"Opioid Analgesic",rc:"-",sr:"-",dl:"D5W หรือ NSS — 10 mcg/mL (ทั่วไป)",sd:"≤24 ชม. ที่ 2-8°C",ad:"Infusion: 0.5-2 mcg/kg/hr\nTitrate 25 mcg/hr ทุก 30 นาที",nt:"ระวัง Serotonin syndrome เมื่อใช้ร่วมกับ MAOIs, SNRIs, SSRIs, tramadol, pethidine\nPregnancy: Category C",ys:[],pg:"C",wn:[]},
+{name:"Furosemide",form:"20 mg/2 mL, 250 mg/25 mL",cat:"Non-Antibiotic",sub:"Diuretic",rc:"-",sr:"-",dl:"D5W หรือ NSS → 50 mL หรือ undiluted",sd:"24 ชม. ที่อุณหภูมิห้อง",ad:"IV push, IM, Continuous infusion\nMax rate: 4 mg/min",nt:"⚠️ ห้ามแช่เย็น\nให้เร็วเกิน → ototoxic\nทิ้งหากสารละลายเป็นสีเหลือง\nPregnancy: Category C",ys:[],pg:"C",wn:["noRefrig"]},
+{name:"Ganciclovir",form:"500 mg/vial",cat:"Non-Antibiotic",sub:"Antiviral",rc:"SWFI 10 mL → 50 mg/mL",sr:"12 ชม. ที่อุณหภูมิห้อง (ห้ามแช่เย็น)",dl:"NSS หรือ D5W — max 10 mg/mL",sd:"24 ชม. ในตู้เย็น",ad:"IV infusion: >1 ชม.",nt:"สารละลายมี pH 11 — ห้ามให้ทาง SC หรือ IM\nห้ามใช้ bacteriostatic water ที่มี paraben (ตกตะกอน)\nPregnancy: Category C",ys:[],pg:"C",wn:["noRefrig"]},
+{name:"Haloperidol",form:"50 mg/1 mL",cat:"Non-Antibiotic",sub:"Antipsychotic",rc:"-",sr:"-",dl:"D5W — 0.5-100 mg ใน 50-100 mL (ไม่ควรใช้ NSS)",sd:"7 วัน ที่ 25°C",ad:"Direct IV: 5 mg/min | Intermittent: >30 นาที หรือ 25 mg/hr",nt:"Flush ด้วย NSS ก่อนและหลัง\nPregnancy: Category C",ys:[],pg:"C",wn:[]},
+{name:"Heparin",form:"5000 IU/mL",cat:"Non-Antibiotic",sub:"Anticoagulant",rc:"-",sr:"เปิดแล้ว: 14 วัน ที่ 2-8°C",dl:"D5W หรือ NSS — 50-100 units/mL (infusion pump)",sd:"24 ชม. ที่ 15-25°C",ad:"SC | IV push: 1 นาที | IV drip: 4-24 ชม.\nห้าม IM (hematoma!)",nt:"Antidote: protamine sulphate\nPregnancy: Category C",ys:[],pg:"C",wn:[]},
+{name:"Hydralazine",form:"20 mg/mL",cat:"Non-Antibiotic",sub:"Vasodilator",rc:"-",sr:"-",dl:"NSS เท่านั้น",sd:"12 ชม. ที่ 25°C",ad:"IM | IV push ช้าๆ ≤0.2 mg/kg/min\nIV infusion <20 mg/50 mL (30 นาที)\n21-40 mg/100 mL (30 นาที) | >40 mg/250 mL (>60 นาที)",nt:"⚠️ ห้ามใช้สารน้ำที่มี Dextrose (เปลี่ยนเป็น hydrazones → toxicity)\nPregnancy: Category C",ys:[],pg:"C",wn:[]},
+{name:"Hydrocortisone",form:"100 mg/vial",cat:"Non-Antibiotic",sub:"Corticosteroid",rc:"SWFI 2 mL",sr:"72 ชม. ที่ 25°C",dl:"NSS หรือ D5W\nIV infusion: 50-100 mL\nSeptic shock: 200 mg/24 ชม. = 1 vial ใน 100 mL",sd:"Conc 1 mg/mL: 24 ชม. | Conc >1 mg/mL: 4 ชม.",ad:"Direct IV: 30 วินาที-10 นาที\n<150 mg: >30 นาที | >150 mg: >60 นาที\nSeptic shock: 8 mL/hr continuous 24 ชม.",nt:"⚠️ ห้ามผสม Glucose | เก็บโดยป้องกันแสง\nPregnancy: Category C",ys:[],pg:"C",wn:["light"]},
+{name:"Hyoscine-N-Butylbromide",form:"20 mg/1 mL",cat:"Non-Antibiotic",sub:"Antispasmodic",rc:"-",sr:"-",dl:"Direct IV: ไม่ต้องเจือจาง หรือ SWI 3-5 mL",sd:"-",ad:"SC, IM | Direct IV: ช้าๆ ใน 1 นาที",nt:"Pregnancy: Category C",ys:[],pg:"C",wn:[]},
+{name:"Insulin Regular",form:"100 U/mL (10 mL)",cat:"Non-Antibiotic",sub:"Endocrine",rc:"-",sr:"หลังเปิด: ≤1 เดือน (แนะนำตู้เย็น)",dl:"NSS หรือ NSS/2 → 100 U/100 mL",sd:"NSS: 14 วัน ในตู้เย็น",ad:"SC, IV | IV infusion: 50 U/min",nt:"Pregnancy: Category B",ys:[],pg:"B",wn:[]},
+{name:"Iron Sucrose",form:"100 mg/5 mL (100 mg trivalent ion)",cat:"Non-Antibiotic",sub:"Hematologic",rc:"-",sr:"-",dl:"NSS เท่านั้น (Dextrose เพิ่ม phlebitis)\n1 amp (5 mL) + NSS ≤100 mL\n2 amp (10 mL) + NSS ≤200 mL",sd:"ใช้ทันที — ทิ้งส่วนที่เหลือ",ad:"Direct IV: ช้าๆ 2-5 นาที (1 mL/min) — ≤2 amp ต่อครั้ง\nIV infusion: 1 amp >15 นาที | 2 amp >30 นาที",nt:"⚠️ Test dose ในผู้ป่วยที่ใช้ครั้งแรก:\nDirect IV: ฉีด 1 mL (20 mg) ใน 1-2 นาที\nIV Infusion: หยดสารละลาย 25 mL (25 mg) ใน 15 นาที\nPregnancy: Category B",ys:[],pg:"B",wn:[]},
+{name:"Ketamine",form:"500 mg/10 mL",cat:"Non-Antibiotic",sub:"Sedative/Anesthetic",rc:"-",sr:"เปิดแล้ว: 8 วัน ที่ 2-8°C",dl:"NSS, D5W, SWI\nIM: ไม่ต้องเจือจาง | Direct IV: 1 mg/mL\nIV Infusion: 1-2 mg/mL",sd:"24 ชม. ที่ 2-8°C",ad:"Direct IV: ≤0.5 mg/kg/min หรือ ≤60 วินาที",nt:"Pregnancy: Category NA",ys:[],pg:"NA",wn:[]},
+{name:"Levetiracetam",form:"500 mg/5 mL",cat:"Non-Antibiotic",sub:"Antiepileptic",rc:"-",sr:"-",dl:"NSS, D5W, LR 100 mL ต่อ 500 mg (5 mg/mL)\nจำกัดน้ำ: max 15 mg/mL",sd:"24 ชม. ที่ 15-30°C",ad:"IV infusion: ≥15 นาที | IV bolus: 3-5 นาที\nICU continuous: 200-400 mg/hr",nt:"Pregnancy: Category C",ys:[],pg:"C",wn:[]},
+{name:"Magnesium Sulfate",form:"50% 2 mL = 1 g/2 mL | 10% 10 mL = 1 g/10 mL",cat:"Non-Antibiotic",sub:"Electrolyte",rc:"-",sr:"-",dl:"NSS, D5W, Ringer\nDirect IV: ≤20%\nกันชัก: 4 g ใน 250 mL | เสริม Mg: 5 g ใน 1000 mL",sd:"24 ชม. ที่อุณหภูมิห้อง",ad:"Direct IV: <150 mg/min | IV Infusion: <2 g/ชม.\nSevere eclampsia: 4 g/hr | 10% MgSO₄ สามารถ IV push ได้",nt:"⚠️ ห้ามแช่เย็น (ตกตะกอน!)\nPregnancy: Category B",ys:[],pg:"B",wn:["noRefrig"]},
+{name:"Methylprednisolone",form:"1 g/vial",cat:"Non-Antibiotic",sub:"Corticosteroid",rc:"Solvent (SWI) ที่ให้มา → 16 mL",sr:"48 ชม. ที่อุณหภูมิห้อง",dl:"NSS หรือ D5W\n60-100 mg ใน 50 mL\n101-500 mg ใน 100 mL\n501-2500 mg ใน 250 mL",sd:"48 ชม. ที่อุณหภูมิห้อง",ad:"IM | IV push: >5-15 นาที | IV infusion: >30-60 นาที",nt:"ไม่แนะนำแช่เย็น\nมี benzyl alcohol 140.4 mg/vial\nPregnancy: Category C",ys:[],pg:"C",wn:[]},
+{name:"Metoclopramide",form:"10 mg/2 mL",cat:"Non-Antibiotic",sub:"Antiemetic",rc:"-",sr:"-",dl:"D5W, NSS, D5N/2, RLS — 10-150 mg/50 mL",sd:"24 ชม. (ไม่ป้องกันแสง) / 48 ชม. (ป้องกันแสง) ที่อุณหภูมิห้อง",ad:"IV Push: >1-2 นาที\nIV Infusion: >15 นาที (N/V จากเคมีบำบัด: 30 นาที)",nt:"ฉีด IV เร็ว → กระวนกระวาย EPS\nPregnancy: Category B",ys:[],pg:"B",wn:[]},
+{name:"Methylergometrine",form:"0.2 mg/mL",cat:"Non-Antibiotic",sub:"Oxytocic",rc:"-",sr:"-",dl:"IM: ไม่ต้องเจือจาง\nDirect IV: NSS 5 mL",sd:"-",ad:"Direct IV: slow IV infusion over 1 นาที",nt:"Pregnancy: Category C",ys:[],pg:"C",wn:[]},
+{name:"Methylene Blue",form:"100 mg/10 mL — IV Infusion เท่านั้น",cat:"Non-Antibiotic",sub:"Antidote",rc:"-",sr:"-",dl:"D5W → 50 mL",sd:"ใช้ทันทีหลังเจือจาง",ad:"IV Infusion: 5-30 นาที",nt:"⚠️ ห้ามผสมด้วย NSS (Cl⁻ ลดการละลาย)\nPregnancy: ไม่ระบุ",ys:[],pg:"-",wn:[]},
+{name:"Midazolam",form:"5 mg/mL, 15 mg/3 mL",cat:"Non-Antibiotic",sub:"Sedative",rc:"-",sr:"-",dl:"NSS, D5W, D5S, Ringer\nIM: ไม่ต้องเจือจาง | Direct IV: 1 mg/mL\nIV Infusion: 0.2-0.5 mg/mL",sd:"72 ชม. ใน D5W/NSS (อุณหภูมิห้องหรือตู้เย็น)",ad:"Direct IV: >2 นาที\nIV Infusion (ICU sedation): 20-100 mcg/kg/hr",nt:"รอผลการตอบสนอง ≥2 นาที ก่อนปรับขนาดยา\nPregnancy: Category D",ys:[],pg:"D",wn:[]},
+{name:"Milrinone",form:"10 mg/10 mL",cat:"Non-Antibiotic",sub:"Vasoactive",rc:"-",sr:"-",dl:"D5W หรือ NSS — แนะนำ 0.2 mg/mL (2 amp ใน 100 mL)",sd:"3 วัน ที่อุณหภูมิห้อง",ad:"Loading: IV bolus >10 นาที\nMaintenance: 0.375-0.75 mcg/kg/min",nt:"Max dose: 1.13 mcg/kg/วัน\nPregnancy: Category C",ys:[],pg:"C",wn:[]},
+{name:"Morphine",form:"10 mg/1 mL",cat:"Non-Antibiotic",sub:"Opioid Analgesic",rc:"-",sr:"-",dl:"NSS, D5W, D10W, SWI, Ringer\nIM/SC: ไม่ต้องเจือจาง | Direct IV: SWI >5 mL\nIV Infusion: 0.1-1 mg/mL (Std: 0.1 mg/mL)",sd:"24 ชม. ที่อุณหภูมิห้อง",ad:"Direct IV: >4-5 นาที",nt:"ยาเปลี่ยนเป็นสีเหลือง/น้ำตาล → สลายตัว ทิ้ง\nให้เร็ว → กดการหายใจ, ความดันโลหิตต่ำ\nPregnancy: Category C",ys:[],pg:"C",wn:[]},
+{name:"N-Acetylcysteine (NAC)",form:"300 mg/3 mL",cat:"Non-Antibiotic",sub:"Antidote",rc:"-",sr:"24 ชม. ที่อุณหภูมิห้อง (ห้ามแช่เย็น)",dl:"D5W, NSS, NSS/2",sd:"24 ชม. ที่อุณหภูมิห้อง (ห้ามแช่เย็น)",ad:"Step 1: 150 mg/kg ใน D5W 200 mL → >15 นาที\nStep 2: 50 mg/kg ใน D5W 500 mL → >4 ชม.\nStep 3: 100 mg/kg ใน D5W 1000 mL → 16 ชม.",nt:"ยาเปลี่ยนเป็นสีชมพู/ม่วงได้ — ไม่กระทบประสิทธิภาพ\nหากใช้ร่วมยาปฏิชีวนะ: ห่างกัน 1-2 ชม.\nPregnancy: Category B",ys:[],pg:"B",wn:["noRefrig"]},
+{name:"Naloxone",form:"0.4 mg/1 mL",cat:"Non-Antibiotic",sub:"Antidote",rc:"-",sr:"-",dl:"D5W, NSS\nDirect IV (opioid overdose): ไม่ต้องเจือจาง\nIV bolus: SWI/NSS 9 mL\nIV Infusion: 0.4 mg ใน 100 mL (4 mcg/mL)",sd:"24 ชม. ที่อุณหภูมิห้อง",ad:"SC, IM, Direct IV, IV Infusion\nDirect IV: >30 วินาที | IV Infusion: 0.7-0.8 mg/hr",nt:"Pregnancy: Category B",ys:[],pg:"B",wn:[]},
+{name:"Nicardipine",form:"2 mg/2 mL",cat:"Non-Antibiotic",sub:"CCB",rc:"-",sr:"-",dl:"D5W, D5S/2, D5S, NSS/2, NSS — 0.1 mg/mL\nจำกัดน้ำ: max 0.2 mg/mL",sd:"24 ชม. ที่อุณหภูมิห้อง (ขวดแก้วหรือ PVC)",ad:"IV push: 1-2 นาที | IV infusion: เริ่ม 2-10 mcg/kg/min\nAcute hypertension: เริ่ม 5 mg/hr → max 15 mg/hr",nt:"⚠️ ห้ามผสมกับ NaHCO₃ หรือ LRS\nควรให้ทาง central line หรือ large peripheral vein\nเปลี่ยนตำแหน่งทุก 12 ชม.\nPregnancy: Category C",ys:[],pg:"C",wn:[]},
+{name:"Nimodipine",form:"10 mg/50 mL",cat:"Non-Antibiotic",sub:"CCB",rc:"-",sr:"-",dl:"กรณีต้องเจือจาง: NSS, D5W, LRS — อัตราส่วน 1:4",sd:"ใช้ทันทีหลังเจือจาง",ad:"แนะนำให้ผ่าน three-way ร่วมกับสารน้ำ (co-infusion) อัตรา 4 เท่าของยา\nRate ยา 1 mg/hr → สารน้ำ 20 mL/hr\nIV infusion 0.5-1 mg/hr ใน 2 ชม. แล้วเพิ่ม 1-2 mg/hr",nt:"⚠️ ห้ามใช้อุปกรณ์/ขวด PVC (ดูดซับยา!)\nห้ามผสมกับยาอื่น\nไวต่อแสง — คงตัว ≤10 ชม. ใต้แสงปกติ\nPregnancy: Category C",ys:[],pg:"C",wn:["light"]},
+{name:"Nitroglycerin",form:"50 mg/10 mL",cat:"Non-Antibiotic",sub:"Vasodilator",rc:"-",sr:"-",dl:"NSS หรือ D5W — 200 mcg/mL (50 mg ใน 240 mL)\nConc: 50-400 mcg/mL",sd:"ขวดแก้ว: 48 ชม. / 7 วัน ตู้เย็น\nขวดพลาสติก: 24 ชม.",ad:"IV infusion: เริ่ม 5 mcg/min → titrate 5 mcg/min ทุก 3-5 นาที",nt:"⚠️ ห้ามใช้ภาชนะ/infusion set PVC (ดูดซับ >80%!)\nPregnancy: Category C",ys:[],pg:"C",wn:[]},
+{name:"Norepinephrine",form:"4 mg/4 mL",cat:"Non-Antibiotic",sub:"Vasoactive",rc:"-",sr:"-",dl:"D5S หรือ D5W\nStd: 16 mcg/mL = 1 amp + D5W 244 mL",sd:"24 ชม. ที่อุณหภูมิห้อง",ad:"เริ่ม 0.5-1 mcg/min | ทั่วไป: 8-30 mcg/min | Max: 30 mcg/min (infusion pump)",nt:"⚠️ หลีกเลี่ยง saline เดี่ยว (Dextrose ป้องกัน oxidation)\n⚠️ ห้ามหยุดยาทันที (rebound hypotension!)\nระวัง Extravasation | ทิ้งหากสารละลายขุ่น/เปลี่ยนสี\nPregnancy: Category C",ys:[],pg:"C",wn:[]},
+{name:"Nitroprusside Sodium",form:"50 mg/vial",cat:"Non-Antibiotic",sub:"Vasodilator",rc:"NSS หรือ D5W 3 mL",sr:"-",dl:"D5W 250/500/1000 mL → 200/100/50 mcg/mL",sd:"D5W: 24 ชม. (ตู้เย็นหรืออุณหภูมิห้อง)",ad:"IV infusion เท่านั้น (ห้าม IV push)\nMax: 10 mcg/kg/min",nt:"⚠️ สีเปลี่ยน (ส้ม/น้ำตาลเข้ม/น้ำเงิน) → ห้ามใช้ (ปลดปล่อย cyanide!)\n⚠️ ต้องหุ้มภาชนะป้องกันแสงขณะให้ยา\nPregnancy: Category C",ys:[],pg:"C",wn:["light"]},
+{name:"Octreotide (Octride®)",form:"100 mcg/1 mL",cat:"Non-Antibiotic",sub:"Hormonal",rc:"-",sr:"-",dl:"Direct IV: ไม่ต้องเจือจาง\nIV Infusion: 50-100 mcg ใน 50 mL NSS/D5W\nBleeding varices continuous:\n25 mcg/hr: ยา 3 หลอด + NSS 45 mL q 12 ชม.\n50 mcg/hr: ยา 6 หลอด + NSS 90 mL q 12 ชม.",sd:"24 ชม. ที่อุณหภูมิห้อง",ad:"Direct IV: >3 นาที | IV Infusion: >15-30 นาที\nContinuous: 25 mcg/hr = 4 mL/hr, 50 mcg/hr = 8 mL/hr",nt:"Pregnancy: Category B",ys:[],pg:"B",wn:[]},
+{name:"Omeprazole",form:"40 mg/vial",cat:"Non-Antibiotic",sub:"PPI",rc:"SWI 10 mL",sr:"4 ชม. ที่อุณหภูมิห้อง",dl:"NSS หรือ D5W\nIV Infusion: 40 mg ใน 50-100 mL\nContinuous: 8 mg/hr = 40 mg ใน 100 mL",sd:"≤4 ชม.",ad:"Direct IV: ≥5 นาที (max 4 mL/min)\nIV Infusion: ≥20-30 นาที | Continuous: 20 mL/hr",nt:"ให้ช้าๆ (เสี่ยง phlebitis)\nPregnancy: Category C",ys:[],pg:"C",wn:[]},
+{name:"Ondansetron",form:"4 mg/2 mL",cat:"Non-Antibiotic",sub:"Antiemetic",rc:"-",sr:"-",dl:"NSS, D5W, D5N, D5N/2, 3% NaCl — 50-100 mL",sd:"48 ชม. ที่อุณหภูมิห้อง",ad:"IM | IV (>30 วินาที) | IV infusion: 15-30 นาที",nt:"Pregnancy: Category B",ys:[],pg:"B",wn:[]},
+{name:"Oxytetracycline+Lidocaine (Oxycline®)",form:"500 mg + 200 mg/10 mL",cat:"Non-Antibiotic",sub:"Sclerosing Agent",rc:"-",sr:"-",dl:"Intrapleural: NSS 50-100 mL",sd:"-",ad:"Intrapleural injection เท่านั้น",nt:"ใช้เป็น Sclerosing agent เพื่อ Pleurodesis\nขนาด 750 mg หรือ 35 mg/kg",ys:[],pg:"-",wn:[]},
+{name:"Oxytocin",form:"10 U/mL",cat:"Non-Antibiotic",sub:"Oxytocic",rc:"-",sr:"-",dl:"NSS, D5W, RLS — เจือจางใน 500-1000 mL",sd:"NSS/D5W: 6 ชม. อุณหภูมิห้อง / 24 ชม. ตู้เย็น",ad:"SC, IM, Intrauterus\nIV Infusion: เริ่ม 0.5-2 mU/min → เพิ่ม 1-2 mU/min ทุก 15-30 นาที",nt:"⚠️ ห้ามเตรียมในสารน้ำที่มี Sulfite\nPregnancy: Category NA",ys:[],pg:"NA",wn:[]},
+{name:"Pamidronate (Pamisol®)",form:"30 mg/10 mL — IV infusion",cat:"Non-Antibiotic",sub:"Bisphosphonate",rc:"-",sr:"-",dl:"NSS หรือ D5W\nMinimum dilution: 60-90 mg ใน 500 mL",sd:"24 ชม. ที่อุณหภูมิห้อง",ad:"IV infusion: ปกติ 4 ชม. (range: 2-24 ชม.)\nให้ช้าๆ เพื่อลดความเป็นพิษต่อไต",nt:"⚠️ ห้ามผสมใน Ringer's solution\nPregnancy: Category D",ys:[],pg:"D",wn:[]},
+{name:"Pantoprazole (PantoVal®)",form:"40 mg — Direct IV, IV infusion",cat:"Non-Antibiotic",sub:"PPI",rc:"-",sr:"-",dl:"NSS หรือ D5W\nDirect IV: NSS 10 mL | IV Infusion: 40-80 mg ใน 100 mL\nContinuous: 8 mg/hr = 80 mg ใน 100 mL",sd:"12 ชม. ที่ 25°C",ad:"Direct IV: >2 นาที | IV Infusion: 15 นาที (≤7 mL/min)\nContinuous: 10 mL/hr",nt:"Pregnancy: Category B",ys:[],pg:"B",wn:[]},
+{name:"Parecoxib (Dynastat®)",form:"40 mg/vial",cat:"Non-Antibiotic",sub:"NSAID",rc:"NSS หรือ D5W 2 mL",sr:"≤12 ชม. ที่อุณหภูมิห้อง (ห้ามแช่เย็น/แช่แข็ง)",dl:"NSS, D5W, D5S, D5S/2",sd:"-",ad:"IV หรือ IM",nt:"⚠️ ห้ามผสมกับ LRS หรือ 5% Glucose in LRS (ตกตะกอน!)\nไม่แนะนำ SWI (ไม่เป็น isotonic)\nPregnancy: Category C (AUS)",ys:[],pg:"C",wn:[]},
+{name:"Pethidine (Meperidine)",form:"50 mg/1 mL",cat:"Non-Antibiotic",sub:"Opioid Analgesic",rc:"-",sr:"-",dl:"NSS, D5W, SWI, RLS\nDirect IV: <10 mg/mL | IV Infusion: <1 mg/mL",sd:"NSS: 24 ชม. ที่อุณหภูมิห้อง",ad:"SC/IM: undiluted | Direct IV: ช้าๆ ≥5 นาที\nIV Infusion: 15-35 mg/hr",nt:"Pregnancy: Category C",ys:[],pg:"C",wn:[]},
+{name:"Phenytoin",form:"250 mg/5 mL",cat:"Non-Antibiotic",sub:"Antiepileptic",rc:"-",sr:"24 ชม. ที่อุณหภูมิห้อง",dl:"NSS เท่านั้น\nDirect IV: ไม่ต้องเจือจาง\nIV Infusion: NSS ≤50 mL (1-10 mg/mL)",sd:"ใช้ทันที (ภายใน 1 ชม.)",ad:"Direct IV: ≤50 mg/นาที (เร็วเกิน → severe hypotension!)\nIV Infusion: ≤50 mg/min ใน 1-4 ชม.\nFlush ด้วย NSS ก่อนและหลัง",nt:"⚠️ ห้ามแช่เย็น (ตกตะกอน!)\nหลีกเลี่ยง IM (ปวดมาก)\nMonitor: BP, EKG, Vital signs\nPregnancy: Category D",ys:[],pg:"D",wn:["noRefrig"]},
+{name:"Potassium Chloride (KCl)",form:"20 mEq/10 mL",cat:"Non-Antibiotic",sub:"Electrolyte",rc:"-",sr:"-",dl:"NSS, D5S, D5S/2, D5W, D10W, Ringer\nPeripheral: max 40 mEq/L | Central: max 200 mEq/L",sd:"24 ชม. ที่อุณหภูมิห้อง",ad:"Slow IV Infusion เท่านั้น\nK >2.5 mEq/L: max 10 mEq/hr | K <2.5 mEq/L: max 40 mEq/hr",nt:"⚠️ ห้าม IV push/Bolus!\nหลังเจือจาง พลิกถุง ≥10 ครั้ง\nระวัง extravasation | Rate 10-20 mEq/hr: monitor HR, BP, EKG\nPregnancy: Category C",ys:[],pg:"C",wn:[]},
+{name:"Propofol",form:"200 mg/20 mL",cat:"Non-Antibiotic",sub:"Sedative/Anesthetic",rc:"-",sr:"6 ชม. หลังเปิด",dl:"NSS หรือ D5W\nDirect IV: ไม่ต้องเจือจาง หรือ D5W → 2 mg/mL (min)\nMax: 10 mg/mL",sd:"-",ad:"IV push: >20-30 วินาที | IV infusion: <60 นาที",nt:"Antidote: Physostigmine\nPregnancy: Category B",ys:[],pg:"B",wn:[]},
+{name:"Ranitidine",form:"สารละลายปราศจากเชื้อ 50 mg/2 mL",cat:"Non-Antibiotic",sub:"H2 Blocker",rc:"-",sr:"-",dl:"NSS หรือ D5W → 50 mg/20 mL หรือ 50 mg/50 mL",sd:"24 ชม. ที่อุณหภูมิห้อง",ad:"IV bolus: max 2.5 mg/mL (20 mL) ≤4 mL/min (5 นาที)\nIV infusion: ≥20-30 นาที",nt:"ป้องกันแสง | ห้ามแช่แข็ง\nPregnancy: Category B",ys:[],pg:"B",wn:["light"]},
+{name:"Rocuronium",form:"50 mg/5 mL",cat:"Non-Antibiotic",sub:"Neuromuscular Blocker",rc:"-",sr:"-",dl:"NSS, D5W, D5S — 0.5 mg/mL หรือ 1 mg/mL",sd:"24 ชม. ที่อุณหภูมิห้อง หรือ 2-8°C",ad:"IM | IV infusion: 0.3-0.4 mg/kg/hr (infusion pump)",nt:"⚠️ ห้ามผสมกับ thiopental หรือยาที่มีฤทธิ์เป็นด่าง\nFlush ด้วย NSS หลังให้ยา",ys:[],pg:"-",wn:[]},
+{name:"Sodium Bicarbonate",form:"7.5% 50 mL = 44.6 mEq/50 mL",cat:"Non-Antibiotic",sub:"Electrolyte",rc:"-",sr:"-",dl:"NSS, D5W, D5S\nผู้ใหญ่: ไม่ต้องเจือจาง | เด็ก: เจือจาง >4.2%",sd:"24 ชม. ที่อุณหภูมิห้อง",ad:"IV push cardiac arrest: 5 mL/min | IV drip: >4-8 ชม.\nMax: 1 mEq/kg/hr",nt:"ให้เร็ว (10 mL/min) → hypernatremia, ↓ CSF pressure, intracranial hemorrhage\nPregnancy: Category C",ys:[],pg:"C",wn:[]},
+{name:"Streptokinase (Thromboflux®)",form:"1,500,000 IU",cat:"Non-Antibiotic",sub:"Thrombolytic",rc:"NSS หรือ D5W 5 mL — กลิ้งขวดเบาๆ ห้ามเขย่าแรง",sr:"8 ชม. ที่ 25°C | 24 ชม. ในตู้เย็น",dl:"NSS, D5W → 50-100 mL (max 1.5 MU/50 mL)\nMI: ปริมาตรสุดท้าย 45 mL | DVT/PE/Arterial: 90 mL",sd:"-",ad:"MI: 1,500,000 IU ใน 60 นาที\nPE/Arterial embolism: Loading 250,000 IU/30 นาที → 100,000 IU/hr 24 ชม.\nDVT: Loading 250,000 IU/30 นาที → 100,000 IU/hr 72 ชม.",nt:"⚠️ Monitor BP, PT, PTT, fibrinogen\nSkin test 100 U ก่อนฉีด (15-20 นาที)\nเมื่อเริ่มอาจเกิด hypotension → หยดช้าๆ อาจให้ corticosteroids ป้องกัน 10 นาทีก่อน\nPregnancy: Category C",ys:[],pg:"C",wn:[]},
+{name:"Terbutaline",form:"0.5 mg/1 mL (500 mcg/mL)",cat:"Non-Antibiotic",sub:"Bronchodilator",rc:"-",sr:"-",dl:"NSS หรือ D5W\nIV Infusion: 500 mcg + D5W 100 mL (5 mcg/mL)",sd:"48 ชม.",ad:"SC\nIV Infusion Premature labor: 2.5-5 mcg/min → เพิ่มทุก 20-30 นาที (max 17.5-30 mcg/min)\nต่อเนื่อง ≤48-72 ชม.",nt:"IV ใช้เฉพาะผู้ป่วยเฉพาะราย (ยับยั้งมดลูกหดตัว)\n⚠️ ห้ามแช่เย็น\nPregnancy: Category C",ys:[],pg:"C",wn:["noRefrig"]},
+{name:"Thiopental",form:"1 g/vial",cat:"Non-Antibiotic",sub:"Sedative/Anesthetic",rc:"SWI",sr:"24 ชม. ที่อุณหภูมิห้อง",dl:"NSS, D5W\nIntermittent IV (2-5%): ยา 1-2 g/50 mL, 5 g/100-250 mL\nContinuous (0.2-0.4%): ยา 1 g/250 mL, 2 g/500 mL",sd:"3 วัน ที่อุณหภูมิห้อง | 7 วัน ในตู้เย็น",ad:"ฉีดช้าๆ — หากให้เร็วเกิน overdose ได้",nt:"Pregnancy: Category C",ys:[],pg:"C",wn:[]},
+{name:"Tramadol HCl",form:"100 mg/2 mL",cat:"Non-Antibiotic",sub:"Analgesic",rc:"-",sr:"-",dl:"NSS หรือ D5W\nSC/IM/Direct IV: เจือจางหรือไม่ก็ได้\nIV Infusion: 0.5-4 mg/mL",sd:"5 วัน ที่อุณหภูมิห้อง",ad:"Direct IV: ช้าๆ 2-3 นาที (เร็วเกิน → คลื่นไส้)\nMax: 400 mg/วัน",nt:"Pregnancy: Category C",ys:[],pg:"C",wn:[]},
+{name:"Tranexamic Acid",form:"5% 250 mg/5 mL",cat:"Non-Antibiotic",sub:"Antifibrinolytic",rc:"-",sr:"-",dl:"NSS, D5W, D10W, RLS\nIV Infusion: ≥50 mL\nNebulize: 250-500 mg + NSS 5-10 mL",sd:"24 ชม. ในตู้เย็น",ad:"Direct IV: ช้าๆ >5 นาที (≤1 mL/min; max 100 mg/min)\nIV Infusion: 15-30 นาที | Nebulize: 30 นาที",nt:"ให้เร็ว → hypotension\nPregnancy: Category B",ys:[],pg:"B",wn:[]},
+{name:"Valproic Acid",form:"400 mg/4 mL",cat:"Non-Antibiotic",sub:"Antiepileptic",rc:"-",sr:"-",dl:"NSS, D5W, RLS → ≥50 mL",sd:"24 ชม. ที่อุณหภูมิห้อง",ad:"IV Infusion: ≥60 นาที | Max rate: ≤20 mg/min",nt:"Pregnancy: Category D",ys:[],pg:"D",wn:[]}
 ];
 
-// Remove duplicate Vancomycin
-const seen = new Set();
-const DRUG_DATA = DRUGS.filter(d => {
-  const key = d.name + d.form;
-  if (seen.has(key)) return false;
-  seen.add(key);
-  return true;
+function cardClass(d){
+  if(d.cat==="Antibiotics") return "ca";
+  const s=d.sub.toLowerCase();
+  if(["vasoactive","antiarrhythmic","vasodilator","thrombolytic"].includes(s)) return "cv";
+  if(["electrolyte"].includes(s)) return "ce";
+  if(["sedative","sedative/anesthetic","neuromuscular blocker"].includes(s)) return "cs";
+  return "cn";
+}
+function badgeClass(d){
+  if(d.cat==="Antibiotics") return "ba";
+  const s=d.sub.toLowerCase();
+  if(["vasoactive","antiarrhythmic","vasodilator","thrombolytic"].includes(s)) return "bv";
+  if(["electrolyte"].includes(s)) return "be";
+  if(["sedative","sedative/anesthetic","neuromuscular blocker"].includes(s)) return "bp";
+  return "bn";
+}
+function warnTags(d){
+  let t="";
+  if(d.ys&&d.ys.length) t+=`<span class="wt wy">Y-site ${d.ys.length} รายการ</span>`;
+  if(d.pg&&!["","-","NA"].includes(d.pg)) t+=`<span class="wt wp">Preg Cat ${d.pg}</span>`;
+  if(d.wn&&d.wn.includes("light")) t+=`<span class="wt wl">ป้องกันแสง</span>`;
+  if(d.wn&&d.wn.includes("noRefrig")) t+=`<span class="wt wr">ห้ามแช่เย็น</span>`;
+  return t;
+}
+let activeCat=null,q="";
+function filtered(){
+  let r=D;
+  if(activeCat) r=r.filter(d=>d.cat===activeCat);
+  if(q.trim()){const lq=q.toLowerCase();r=r.filter(d=>[d.name,d.sub,d.form,d.dl,d.nt,d.ad].some(x=>x&&x.toLowerCase().includes(lq)));}
+  return r;
+}
+function render(){
+  const res=filtered();
+  const grid=document.getElementById("grid");
+  const nores=document.getElementById("nores");
+  document.getElementById("cnt").textContent=res.length;
+  if(!res.length){nores.style.display="block";grid.innerHTML="";return;}
+  nores.style.display="none";
+  grid.innerHTML=res.map(d=>`
+<div class="dc ${cardClass(d)}" onclick="openModal(${D.indexOf(d)})">
+  <div class="ch">
+    <div><div class="dn">${d.name}</div><div class="ds">${d.sub}</div></div>
+    <span class="bdg ${badgeClass(d)}">${d.cat==="Antibiotics"?d.sub:d.cat}</span>
+  </div>
+  <div class="ci">
+    <div class="ii"><div class="il">การเจือจางยา</div><div class="iv hi">${d.dl.split('\n')[0].substring(0,55)}${d.dl.length>55?'…':''}</div></div>
+    <div class="ii"><div class="il">ความคงตัวหลังเจือจาง</div><div class="iv">${(d.sd||'-').split('\n')[0].substring(0,55)}</div></div>
+  </div>
+  <div class="cf">${d.form.split('\n')[0]}</div>
+  <div class="cw">${warnTags(d)}</div>
+</div>`).join("");
+}
+const cf=document.getElementById("cats");
+[["ทั้งหมด",null],["Antibiotics","Antibiotics"],["Non-Antibiotic","Non-Antibiotic"]].forEach(([lbl,val])=>{
+  const b=document.createElement("button");
+  b.className="cb"+(val===null?" on":"");
+  b.textContent=lbl;
+  b.onclick=()=>{
+    document.querySelectorAll(".cb").forEach(x=>x.classList.remove("on"));
+    b.classList.add("on");activeCat=val;
+    document.getElementById("catlbl").textContent=val||"ทุกหมวดยา";
+    render();
+  };
+  cf.appendChild(b);
 });
-
-const CATEGORIES = {
-  "ทั้งหมด": null,
-  "Antibiotics": "Antibiotics",
-  "Non-Antibiotic": "Non-Antibiotic"
-};
-
-const SUBCATS = {
-  Antibiotics: ["Penicillins","Cephalosporins","BL/BLI","Carbapenems","Aminoglycosides","Fluoroquinolones","Macrolides","Lincosamides","Tetracyclines","Polymycins","Glycopeptide","Sulfonamides","Antifungal","Antiviral","Miscellaneous"],
-  "Non-Antibiotic": ["Vasoactive","Antiarrhythmic","Cardiac","Calcium Channel Blocker","Beta-Blocker","Vasodilator","Diuretic","Antiepileptic","Sedative","Sedative/Anesthetic","Opioid Analgesic","Analgesic","Antiemetic","PPI","H2 Blocker","Corticosteroid","Endocrine","Electrolyte","Anticoagulant","Antifibrinolytic","Antidote","Bronchodilator","Antipsychotic","NSAID","Neuromuscular Blocker","Obstetric"]
-};
-
-let activeFilter = null;
-let searchTerm = "";
-
-function getBadgeClass(d) {
-  if (d.cat === "Antibiotics") return "badge-antibiotic";
-  const sub = d.subcat.toLowerCase();
-  if (["vasoactive","antiarrhythmic","cardiac","calcium channel blocker","beta-blocker","vasodilator"].includes(sub)) return "badge-vasoactive";
-  if (["electrolyte"].includes(sub)) return "badge-electrolyte";
-  if (["sedative","sedative/anesthetic","neuromuscular blocker"].includes(sub)) return "badge-sedative";
-  return "badge-nonantibiotic";
+document.getElementById("si").addEventListener("input",e=>{q=e.target.value;render();});
+function openModal(i){
+  const d=D[i];
+  document.getElementById("mon").textContent=d.name;
+  document.getElementById("mos").textContent=`${d.sub} — ${d.form.split('\n')[0]}`;
+  const yBlock=d.ys&&d.ys.length?`<div class="ms"><div class="mt"><span class="dot d5"></span>⚠️ Y-site Incompatibility</div><div class="mc w">ห้ามให้ร่วมสาย (Y-site) กับ:<br>${d.ys.map(x=>`<span class="mtag">${x}</span>`).join("")}</div></div>`:"";
+  document.getElementById("mob").innerHTML=`
+<div class="mg2">
+  <div class="ms"><div class="mt"><span class="dot d1"></span>การละลายผงยา (Reconstitution)</div><div class="mc">${(d.rc||'-').replace(/\n/g,"<br>")}</div></div>
+  <div class="ms"><div class="mt"><span class="dot d4"></span>ความคงตัวหลังละลาย</div><div class="mc">${(d.sr||'-').replace(/\n/g,"<br>")}</div></div>
+</div>
+<div class="ms"><div class="mt"><span class="dot d2"></span>การเจือจางยา (Dilution)</div><div class="mc">${d.dl.replace(/\n/g,"<br>")}</div></div>
+<div class="ms"><div class="mt"><span class="dot d4"></span>ความคงตัวหลังเจือจางยา</div><div class="mc">${(d.sd||'-').replace(/\n/g,"<br>")}</div></div>
+<div class="ms"><div class="mt"><span class="dot d3"></span>การบริหารยา (Administration)</div><div class="mc">${d.ad.replace(/\n/g,"<br>")}</div></div>
+${yBlock}
+<div class="ms"><div class="mt"><span class="dot d5"></span>หมายเหตุ / ข้อควรระวัง</div><div class="mc ${d.nt.includes('⚠️')?'w':''}">${d.nt.replace(/\n/g,"<br>")}</div></div>`;
+  document.getElementById("mb").classList.add("open");document.body.style.overflow="hidden";
 }
-
-function getCardClass(d) {
-  if (d.cat === "Antibiotics") return "cat-antibiotic";
-  const sub = d.subcat.toLowerCase();
-  if (["vasoactive","antiarrhythmic","vasodilator"].includes(sub)) return "cat-vasoactive";
-  if (["electrolyte"].includes(sub)) return "cat-electrolyte";
-  return "cat-nonantibiotic";
-}
-
-function getWarningTags(d) {
-  const tags = [];
-  if (d.ysite && d.ysite.length > 0) tags.push(`<span class="warn-tag warn-ysiteblock">Y-site: ห้ามกับ ${d.ysite.length} ชนิด</span>`);
-  if (d.pregnancy && d.pregnancy !== "-" && d.pregnancy !== "NA") tags.push(`<span class="warn-tag warn-pregnancy">Preg Cat ${d.pregnancy}</span>`);
-  if (d.warnings && d.warnings.includes("light")) tags.push(`<span class="warn-tag warn-light">ป้องกันแสง</span>`);
-  if (d.warnings && d.warnings.includes("noRefrig")) tags.push(`<span class="warn-tag warn-refrig">ห้ามแช่เย็น</span>`);
-  return tags.join("");
-}
-
-function renderCards(drugs) {
-  const grid = document.getElementById("drug-grid");
-  const noRes = document.getElementById("no-results");
-  grid.innerHTML = "";
-  if (drugs.length === 0) { noRes.style.display = "block"; grid.style.display = "none"; document.getElementById("count-shown").textContent = "0"; return; }
-  noRes.style.display = "none";
-  grid.style.display = "grid";
-  document.getElementById("count-shown").textContent = drugs.length;
-  drugs.forEach((d, i) => {
-    const el = document.createElement("div");
-    el.className = `drug-card ${getCardClass(d)}`;
-    el.innerHTML = `
-      <div class="card-header">
-        <div><div class="drug-name">${d.name}</div><div class="drug-generic">${d.subcat}</div></div>
-        <span class="subcat-badge ${getBadgeClass(d)}">${d.cat === "Antibiotics" ? d.subcat : d.cat}</span>
-      </div>
-      <div class="card-info">
-        <div class="info-item">
-          <div class="info-label">การเจือจางยา</div>
-          <div class="info-value highlight">${d.dilution.split('\n')[0].substring(0,60)}${d.dilution.length>60?'…':''}</div>
-        </div>
-        <div class="info-item">
-          <div class="info-label">ความคงตัวหลังเจือจาง</div>
-          <div class="info-value">${d.stabilityDilute.split('\n')[0].substring(0,60) || '-'}</div>
-        </div>
-      </div>
-      <div class="card-form">${d.form}</div>
-      <div class="card-warnings">${getWarningTags(d)}</div>
-    `;
-    el.addEventListener("click", () => openModal(d));
-    grid.appendChild(el);
-  });
-}
-
-function getFiltered() {
-  let drugs = DRUG_DATA;
-  if (activeFilter) drugs = drugs.filter(d => d.cat === activeFilter);
-  if (searchTerm.trim()) {
-    const q = searchTerm.toLowerCase();
-    drugs = drugs.filter(d =>
-      d.name.toLowerCase().includes(q) ||
-      d.subcat.toLowerCase().includes(q) ||
-      d.form.toLowerCase().includes(q) ||
-      d.dilution.toLowerCase().includes(q) ||
-      d.notes.toLowerCase().includes(q)
-    );
-  }
-  return drugs;
-}
-
-function updateStats() {
-  const label = document.getElementById("active-cat-label");
-  label.textContent = activeFilter ? `หมวด: ${activeFilter}` : "ทุกหมวดยา";
-}
-
-// Init filters
-const filterDiv = document.getElementById("cat-filters");
-Object.entries(CATEGORIES).forEach(([label, value]) => {
-  const btn = document.createElement("button");
-  btn.className = "cat-btn" + (value === null ? " active" : "");
-  btn.textContent = label;
-  btn.addEventListener("click", () => {
-    document.querySelectorAll(".cat-btn").forEach(b => b.classList.remove("active"));
-    btn.classList.add("active");
-    activeFilter = value;
-    updateStats();
-    renderCards(getFiltered());
-  });
-  filterDiv.appendChild(btn);
-});
-
-document.getElementById("search-input").addEventListener("input", e => {
-  searchTerm = e.target.value;
-  renderCards(getFiltered());
-});
-
-// Modal
-function openModal(d) {
-  document.getElementById("modal-drug-name").textContent = d.name;
-  document.getElementById("modal-drug-sub").textContent = `${d.subcat} — ${d.form}`;
-  const body = document.getElementById("modal-body");
-  body.innerHTML = `
-    <div class="modal-grid2">
-      <div class="modal-section">
-        <div class="section-title"><span class="section-dot dot-recon"></span>การละลายผงยา (Reconstitution)</div>
-        <div class="section-content">${d.reconstitution.replace(/\n/g,"<br>") || '<em style="color:var(--text-muted)">-</em>'}</div>
-      </div>
-      <div class="modal-section">
-        <div class="section-title"><span class="section-dot dot-stability"></span>ความคงตัวหลังละลายผงยา</div>
-        <div class="section-content">${d.stabilityRecon.replace(/\n/g,"<br>") || '<em style="color:var(--text-muted)">-</em>'}</div>
-      </div>
-    </div>
-    <div class="modal-section">
-      <div class="section-title"><span class="section-dot dot-dilute"></span>การเจือจางยา (Dilution)</div>
-      <div class="section-content">${d.dilution.replace(/\n/g,"<br>")}</div>
-    </div>
-    <div class="modal-section">
-      <div class="section-title"><span class="section-dot dot-stability"></span>ความคงตัวหลังเจือจางยา</div>
-      <div class="section-content">${d.stabilityDilute.replace(/\n/g,"<br>") || '<em style="color:var(--text-muted)">-</em>'}</div>
-    </div>
-    <div class="modal-section">
-      <div class="section-title"><span class="section-dot dot-admin"></span>การบริหารยา (Administration)</div>
-      <div class="section-content">${d.admin.replace(/\n/g,"<br>")}</div>
-    </div>
-    ${d.ysite && d.ysite.length > 0 ? `
-    <div class="modal-section">
-      <div class="section-title"><span class="section-dot dot-notes"></span>⚠️ Y-site Incompatibility</div>
-      <div class="section-content warning">ห้ามให้ร่วมสาย (Y-site) กับ:<br>${d.ysite.map(x=>`<span class="modal-tag" style="background:var(--c-red-light);color:var(--c-red)">${x}</span>`).join("")}</div>
-    </div>` : ""}
-    <div class="modal-section">
-      <div class="section-title"><span class="section-dot dot-notes"></span>หมายเหตุ / ข้อควรระวัง</div>
-      <div class="section-content ${d.notes.includes('⚠️') ? 'warning' : ''}">${d.notes.replace(/\n/g,"<br>")}</div>
-    </div>
-  `;
-  document.getElementById("modal-backdrop").classList.add("open");
-  document.body.style.overflow = "hidden";
-}
-
-document.getElementById("modal-close").addEventListener("click", () => {
-  document.getElementById("modal-backdrop").classList.remove("open");
-  document.body.style.overflow = "";
-});
-document.getElementById("modal-backdrop").addEventListener("click", e => {
-  if (e.target === document.getElementById("modal-backdrop")) {
-    document.getElementById("modal-backdrop").classList.remove("open");
-    document.body.style.overflow = "";
-  }
-});
-document.addEventListener("keydown", e => {
-  if (e.key === "Escape") {
-    document.getElementById("modal-backdrop").classList.remove("open");
-    document.body.style.overflow = "";
-  }
-});
-
-// Initial render
-updateStats();
-renderCards(getFiltered());
+document.getElementById("moc").onclick=()=>{document.getElementById("mb").classList.remove("open");document.body.style.overflow="";};
+document.getElementById("mb").onclick=e=>{if(e.target===document.getElementById("mb")){document.getElementById("mb").classList.remove("open");document.body.style.overflow="";}};
+document.addEventListener("keydown",e=>{if(e.key==="Escape"){document.getElementById("mb").classList.remove("open");document.body.style.overflow="";}});
+render();
 </script>
 </body>
 </html>
